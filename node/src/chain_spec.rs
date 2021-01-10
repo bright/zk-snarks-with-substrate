@@ -1,7 +1,7 @@
 use sp_core::{Pair, Public, sr25519};
 use node_template_runtime::{
 	AccountId, AuraConfig, BalancesConfig, GenesisConfig, GrandpaConfig,
-	SudoConfig, SystemConfig, WASM_BINARY, Signature
+	SudoConfig, SystemConfig, WASM_BINARY, Signature, UtxoConfig
 };
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_finality_grandpa::AuthorityId as GrandpaId;
@@ -62,6 +62,10 @@ pub fn development_config() -> Result<ChainSpec, String> {
 				get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
 				get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
 			],
+			vec![
+				get_from_seed::<sr25519::Public>("Alice"),
+				get_from_seed::<sr25519::Public>("Bob"),
+			],
 			true,
 		),
 		// Bootnodes
@@ -110,6 +114,10 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 				get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 				get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 			],
+			vec![
+				get_from_seed::<sr25519::Public>("Alice"),
+				get_from_seed::<sr25519::Public>("Bob"),
+			],
 			true,
 		),
 		// Bootnodes
@@ -131,6 +139,7 @@ fn testnet_genesis(
 	initial_authorities: Vec<(AuraId, GrandpaId)>,
 	root_key: AccountId,
 	endowed_accounts: Vec<AccountId>,
+	endowed_utxos: Vec<sr25519::Public>,
 	_enable_println: bool,
 ) -> GenesisConfig {
 	GenesisConfig {
@@ -152,6 +161,16 @@ fn testnet_genesis(
 		pallet_sudo: Some(SudoConfig {
 			// Assign network admin rights.
 			key: root_key,
+		}),
+		pallet_utxo: Some(UtxoConfig{
+			genesis_utxos: endowed_utxos
+				.iter()
+				.map(|x|
+					pallet_utxo::TransactionOutput {
+						value: 100 as pallet_utxo::Value,
+						pubkey: x.clone().into(),
+					}
+				).collect(),
 		}),
 	}
 }

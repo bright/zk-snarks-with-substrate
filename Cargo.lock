@@ -1867,9 +1867,28 @@ checksum = "644f9158b2f133fd50f5fb3242878846d9eb792e445c893805ff0e3824006e35"
 
 [[package]]
 name = "hex-literal"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "961de220ec9a91af2e1e5bd80d02109155695e516771762381ef8581317066e0"
+dependencies = [
+ "hex-literal-impl",
+ "proc-macro-hack",
+]
+
+[[package]]
+name = "hex-literal"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5af1f635ef1bc545d78392b136bfe1c9809e029023c84a3638a864a10b8819c8"
+
+[[package]]
+name = "hex-literal-impl"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "853f769599eb31de176303197b7ba4973299c38c7a7604a6bc88c3eef05b9b46"
+dependencies = [
+ "proc-macro-hack",
+]
 
 [[package]]
 name = "hex_fmt"
@@ -2950,6 +2969,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "maplit"
+version = "1.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3e2e65a1a2e43cfcb47a895c4c8b10d1f4a61097f9f254f183aee60cad9c651d"
+
+[[package]]
 name = "matchers"
 version = "0.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3238,6 +3263,7 @@ dependencies = [
  "jsonrpc-core",
  "node-template-runtime",
  "pallet-transaction-payment-rpc",
+ "pallet-utxo",
  "sc-basic-authorship",
  "sc-cli",
  "sc-client-api",
@@ -3274,7 +3300,7 @@ dependencies = [
  "frame-system",
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
- "hex-literal",
+ "hex-literal 0.3.1",
  "pallet-aura",
  "pallet-balances",
  "pallet-grandpa",
@@ -3284,6 +3310,7 @@ dependencies = [
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
+ "pallet-utxo",
  "parity-scale-codec",
  "serde",
  "sp-api",
@@ -3666,6 +3693,22 @@ dependencies = [
  "parity-scale-codec",
  "serde",
  "sp-api",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-utxo"
+version = "2.0.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "hex-literal 0.2.1",
+ "maplit",
+ "parity-scale-codec",
+ "serde",
+ "sp-core",
+ "sp-io",
  "sp-runtime",
  "sp-std",
 ]
@@ -4836,7 +4879,7 @@ dependencies = [
  "fnv",
  "futures 0.3.5",
  "hash-db",
- "hex-literal",
+ "hex-literal 0.3.1",
  "kvdb",
  "lazy_static",
  "log",

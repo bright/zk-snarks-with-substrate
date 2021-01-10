@@ -1,0 +1,16 @@
+{
+  "Address": "AccountId",
+  "LookupSource": "AccountId",
+  "TxCount": "u32",
+  "Value": "u128",
+  "UtxoHash": "H256",
+  "TxHash": "H256",
+  "TransactionOutput": {
+    "value": "Value",
+    "pubkey": "AccountId"
+  },
+  "Transaction": {
+    "input": "Vec<UtxoHash>",
+    "output": "Vec<TransactionOutput>"
+  }
+}

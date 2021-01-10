@@ -23,6 +23,7 @@ jsonrpc-core = '15.0.0'
 structopt = '0.3.8'
 
 # local dependencies
+pallet-utxo= { path = '../pallets/utxo', version = '2.0.0'}
 node-template-runtime = { path = '../runtime', version = '2.0.0' }
 
 # Substrate dependencies

@@ -1,0 +1,47 @@
+[package]
+authors = ['Parity']
+description = 'FRAME pallet template for defining custom runtime logic.'
+edition = '2018'
+homepage = 'https://substrate.dev'
+name = 'pallet-utxo'
+repository = 'https://github.com/substrate-developer-hub/substrate-node-template/'
+version = '2.0.0'
+
+[package.metadata.docs.rs]
+targets = ['x86_64-unknown-linux-gnu']
+
+[dependencies.codec]
+default-features = false
+features = ['derive']
+package = 'parity-scale-codec'
+version = '1.3.4'
+
+[dependencies.serde]
+features = ['derive']
+optional = true
+version = '1.0.103'
+
+[dependencies]
+frame-support = { default-features = false, version = '2.0.0' }
+frame-system = { default-features = false, version = '2.0.0' }
+sp-std = { default-features = false, version = '2.0.0' }
+sp-core = { default-features = false, version = '2.0.0' }
+sp-io = { default-features = false, version = '2.0.0' }
+sp-runtime = { default-features = false, version = '2.0.0' }
+
+[dev-dependencies]
+hex-literal = "0.2.1"
+maplit = "1.0.2"
+
+[features]
+default = ['std']
+std = [
+    'codec/std',
+    'frame-support/std',
+    'frame-system/std',
+    'serde',
+    'sp-core/std',
+    'sp-io/std',
+    'sp-std/std',
+    'sp-runtime/std',
+]
