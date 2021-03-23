@@ -37,6 +37,7 @@ frame-system-rpc-runtime-api = { default-features = false, version = '3.0.0' }
 pallet-aura = { default-features = false, version = '3.0.0' }
 pallet-balances = { default-features = false, version = '3.0.0' }
 pallet-grandpa = { default-features = false, version = '3.0.0' }
+pallet-node-authorization = { default-features = false, version = '3.0.0' }
 pallet-randomness-collective-flip = { default-features = false, version = '3.0.0' }
 pallet-sudo = { default-features = false, version = '3.0.0' }
 pallet-timestamp = { default-features = false, version = '3.0.0' }
@@ -76,6 +77,7 @@ std = [
     'pallet-aura/std',
     'pallet-balances/std',
     'pallet-grandpa/std',
+    'pallet-node-authorization/std',
     'pallet-randomness-collective-flip/std',
     'pallet-sudo/std',
     'pallet-template/std',

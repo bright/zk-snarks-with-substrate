@@ -8,6 +8,9 @@ use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{Verify, IdentifyAccount};
 use sc_service::ChainType;
 
+use sp_core::OpaquePeerId; // A struct wraps Vec<u8>, represents as our `PeerId`.
+use node_template_runtime::NodeAuthorizationConfig; // The genesis config that serves for our pallet.
+
 // The URL for the telemetry server.
 // const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 
@@ -153,5 +156,17 @@ fn testnet_genesis(
 			// Assign network admin rights.
 			key: root_key,
 		}),
+		pallet_node_authorization: Some(NodeAuthorizationConfig {
+    		nodes: vec![
+				(
+					OpaquePeerId(bs58::decode("12D3KooWBmAwcd4PJNJvfV89HwE48nwkRmAgo8Vy3uQEyNNHBox2").into_vec().unwrap()),
+					endowed_accounts[0].clone()
+				),
+				(
+					OpaquePeerId(bs58::decode("12D3KooWQYV9dGMFoRzNStwpXztXaBUjtPqi6aU76ZgUriHhKust").into_vec().unwrap()),
+					endowed_accounts[1].clone()
+				),
+    		],
+   		}),
 	}
 }
