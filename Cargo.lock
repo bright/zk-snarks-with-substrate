@@ -3522,6 +3522,7 @@ dependencies = [
  "hex-literal",
  "pallet-aura",
  "pallet-balances",
+ "pallet-gift",
  "pallet-grandpa",
  "pallet-randomness-collective-flip",
  "pallet-sudo",

@@ -1,9 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-/// Edit this file to define custom logic or remove it if it is not needed.
-/// Learn more about FRAME and the core library of Substrate FRAME pallets:
-/// <https://substrate.dev/docs/en/knowledgebase/runtime/frame>
-
 pub use pallet::*;
 
 #[frame_support::pallet]
@@ -28,7 +24,8 @@ pub mod pallet {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		/// The Balances of your system.
 		type Currency: ReservableCurrency<Self::AccountId>;
-		/// The additional deposit needed to place a gift.
+		/// The additional deposit needed to place a gift. Should be greater than the existential
+		/// deposit to avoid killing the gifter account.
 		type GiftDeposit: Get<BalanceOf<Self>>;
 		/// The minimum gift amount. Should be greater than the existential deposit.
 		type MinimumGift: Get<BalanceOf<Self>>;
@@ -60,12 +57,12 @@ pub mod pallet {
 	#[pallet::metadata(T::AccountId = "AccountId", BalanceOf<T> = "Balance")]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// Event documentation should end with an array that provides descriptive names for event
-		/// parameters. [gifter, amount, claimer]
-		GiftCreated(T::AccountId, BalanceOf<T>, T::AccountId),
-		/// Event documentation should end with an array that provides descriptive names for event
-		/// parameters. [claimer, amount, to]
+		/// A gift has been created! [amount, claimer]
+		GiftCreated(BalanceOf<T>, T::AccountId),
+		/// A gift has been claimed! [claimer, amount, to]
 		GiftClaimed(T::AccountId, BalanceOf<T>, T::AccountId),
+		/// A gift has been removed :( [to]
+		GiftRemoved(T::AccountId),
 	}
 
 	// Errors inform users that something went wrong.
@@ -79,6 +76,8 @@ pub mod pallet {
 		Overflow,
 		/// A gift does not exist for this user.
 		NoGift,
+		/// You are not the owner of this gift.
+		NotGifter,
 	}
 
 	#[pallet::hooks]
@@ -104,13 +103,13 @@ pub mod pallet {
 			// All checks have passed, so let's create the gift.
 
 			let gift = GiftInfo {
-				gifter: who.clone(),
+				gifter: who,
 				deposit,
 				amount,
 			};
 
 			Gifts::<T>::insert(&to, gift);
-			Self::deposit_event(Event::<T>::GiftCreated(who, amount, to));
+			Self::deposit_event(Event::<T>::GiftCreated(amount, to));
 			Ok(().into())
 		}
 
@@ -130,7 +129,23 @@ pub mod pallet {
 			debug_assert!(res.is_ok());
 
 			Self::deposit_event(Event::<T>::GiftClaimed(who, gift.amount, to));
+			Ok(().into())
+		}
 
+		#[pallet::weight(0)]
+		fn remove(origin: OriginFor<T>, to: T::AccountId) -> DispatchResultWithPostInfo {
+			let who = ensure_signed(origin)?;
+
+			let gift = Gifts::<T>::get(&to).ok_or(Error::<T>::NoGift)?;
+			ensure!(gift.gifter == who, Error::<T>::NotGifter);
+
+			let err_amount = T::Currency::unreserve(&gift.gifter, gift.deposit.saturating_add(gift.amount));
+			// Should always have enough reserved unless there is a bug somewhere.
+			debug_assert!(err_amount.is_zero());
+
+			Gifts::<T>::remove(&to);
+
+			Self::deposit_event(Event::<T>::GiftRemoved(to));
 			Ok(().into())
 		}
 	}
