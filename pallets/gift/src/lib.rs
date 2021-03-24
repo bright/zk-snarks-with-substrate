@@ -8,46 +8,77 @@ pub use pallet::*;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
+	use frame_support::{
+		pallet_prelude::*,
+		traits::{Currency, ExistenceRequirement, ReservableCurrency},
+		weights::Pays,
+		sp_runtime::{
+			MultiSignature, MultiSigner,
+			traits::{CheckedAdd, Saturating, Zero},
+		},
+	};
 	use frame_system::pallet_prelude::*;
+
+	type BalanceOf<T> = <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		/// The Balances of your system.
+		type Currency: ReservableCurrency<Self::AccountId>;
+		/// The additional deposit needed to place a gift.
+		type GiftDeposit: Get<BalanceOf<Self>>;
+		/// The minimum gift amount. Should be greater than the existential deposit.
+		type MinimumGift: Get<BalanceOf<Self>>;
+
 	}
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
 
-	// The pallet's runtime storage items.
-	// https://substrate.dev/docs/en/knowledgebase/runtime/storage
-	#[pallet::storage]
-	#[pallet::getter(fn something)]
-	// Learn more about declaring storage items:
-	// https://substrate.dev/docs/en/knowledgebase/runtime/storage#declaring-storage-items
-	pub type Something<T> = StorageValue<_, u32>;
+	#[derive(Encode, Decode)]
+	pub struct GiftInfo<AccountId, Balance> {
+		gifter: AccountId,
+		deposit: Balance,
+		amount: Balance,
+	}
 
-	// Pallets use events to inform users when important changes are made.
-	// https://substrate.dev/docs/en/knowledgebase/runtime/events
+	#[pallet::storage]
+	#[pallet::getter(fn gifts)]
+	pub type Gifts<T: Config> = StorageMap<
+		_,
+		Twox64Concat,
+		T::AccountId,
+		GiftInfo<T::AccountId, BalanceOf<T>>,
+		OptionQuery
+	>;
+
 	#[pallet::event]
-	#[pallet::metadata(T::AccountId = "AccountId")]
+	#[pallet::metadata(T::AccountId = "AccountId", BalanceOf<T> = "Balance")]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// Event documentation should end with an array that provides descriptive names for event
-		/// parameters. [something, who]
-		SomethingStored(u32, T::AccountId),
+		/// parameters. [gifter, amount, claimer]
+		GiftCreated(T::AccountId, BalanceOf<T>, T::AccountId),
+		/// Event documentation should end with an array that provides descriptive names for event
+		/// parameters. [claimer, amount, to]
+		GiftClaimed(T::AccountId, BalanceOf<T>, T::AccountId),
 	}
 
 	// Errors inform users that something went wrong.
 	#[pallet::error]
 	pub enum Error<T> {
-		/// Error names should be descriptive.
-		NoneValue,
-		/// Errors should have helpful documentation associated with them.
-		StorageOverflow,
+		/// User already has a pending gift.
+		PendingGift,
+		/// Don't be cheap... Get your friend a good gift!
+		GiftTooSmall,
+		/// An overflow has occurred.
+		Overflow,
+		/// A gift does not exist for this user.
+		NoGift,
 	}
 
 	#[pallet::hooks]
@@ -60,39 +91,114 @@ pub mod pallet {
 	impl<T:Config> Pallet<T> {
 		/// An example dispatchable that takes a singles value as a parameter, writes the value to
 		/// storage and emits an event. This function must be dispatched by a signed extrinsic.
-		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
-		pub fn do_something(origin: OriginFor<T>, something: u32) -> DispatchResultWithPostInfo {
-			// Check that the extrinsic was signed and get the signer.
-			// This function will return an error if the extrinsic is not signed.
-			// https://substrate.dev/docs/en/knowledgebase/runtime/origin
+		#[pallet::weight(0)]
+		fn gift(origin: OriginFor<T>, amount: BalanceOf<T>, to: T::AccountId) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
+			ensure!(!Gifts::<T>::contains_key(&to), Error::<T>::PendingGift);
+			ensure!(amount >= T::MinimumGift::get(), Error::<T>::GiftTooSmall);
 
-			// Update storage.
-			<Something<T>>::put(something);
+			let deposit = T::GiftDeposit::get();
+			let total_reserve = amount.checked_add(&deposit).ok_or(Error::<T>::Overflow)?;
+			T::Currency::reserve(&who, total_reserve)?;
 
-			// Emit an event.
-			Self::deposit_event(Event::SomethingStored(something, who));
-			// Return a successful DispatchResultWithPostInfo
+			// All checks have passed, so let's create the gift.
+
+			let gift = GiftInfo {
+				gifter: who.clone(),
+				deposit,
+				amount,
+			};
+
+			Gifts::<T>::insert(&to, gift);
+			Self::deposit_event(Event::<T>::GiftCreated(who, amount, to));
 			Ok(().into())
 		}
 
-		/// An example dispatchable that may throw a custom error.
-		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1,1))]
-		pub fn cause_error(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-			let _who = ensure_signed(origin)?;
+		#[pallet::weight((0, Pays::No))] // Does not pay fee, so we MUST prevalidate this function
+		fn claim(origin: OriginFor<T>, to: T::AccountId, _signature: MultiSignature) -> DispatchResultWithPostInfo {
+			let who = ensure_signed(origin)?;
 
-			// Read a value from storage.
-			match <Something<T>>::get() {
-				// Return an error if the value has not been set.
-				None => Err(Error::<T>::NoneValue)?,
-				Some(old) => {
-					// Increment the value read from storage; will error in the event of overflow.
-					let new = old.checked_add(1).ok_or(Error::<T>::StorageOverflow)?;
-					// Update the value in storage with the incremented result.
-					<Something<T>>::put(new);
-					Ok(().into())
-				},
-			}
+			// In the pre-validation function we confirmed that the signature is accurate,
+			// so we don't need to validate again here and we can take the storage item directly.
+			let gift = Gifts::<T>::take(&to).ok_or(Error::<T>::NoGift)?;
+
+			let err_amount = T::Currency::unreserve(&gift.gifter, gift.deposit.saturating_add(gift.amount));
+			// Should always have enough reserved unless there is a bug somewhere.
+			debug_assert!(err_amount.is_zero());
+			let res = T::Currency::transfer(&who, &to, gift.amount, ExistenceRequirement::AllowDeath);
+			// Should never fail because we unreserve more than this above.
+			debug_assert!(res.is_ok());
+
+			Self::deposit_event(Event::<T>::GiftClaimed(who, gift.amount, to));
+
+			Ok(().into())
 		}
 	}
 }
+
+// /// Validate `claim` calls prior to execution. Needed to avoid a DoS attack since they are
+// /// otherwise free to place on chain.
+// #[derive(Encode, Decode, Clone, Eq, PartialEq)]
+// pub struct PrevalidateGiftClaim<T: Config + Send + Sync>(sp_std::marker::PhantomData<T>) where
+// 	<T as frame_system::Config>::Call: IsSubType<Call<T>>;
+
+// impl<T: Config + Send + Sync> Debug for PrevalidateGiftClaim<T> where
+// 	<T as frame_system::Config>::Call: IsSubType<Call<T>>
+// {
+// 	#[cfg(feature = "std")]
+// 	fn fmt(&self, f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+// 		write!(f, "PrevalidateGiftClaim")
+// 	}
+
+// 	#[cfg(not(feature = "std"))]
+// 	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+// 		Ok(())
+// 	}
+// }
+
+// impl<T: Config + Send + Sync> PrevalidateGiftClaim<T> where
+// 	<T as frame_system::Config>::Call: IsSubType<Call<T>>
+// {
+// 	/// Create new `SignedExtension` to check runtime version.
+// 	pub fn new() -> Self {
+// 		Self(sp_std::marker::PhantomData)
+// 	}
+// }
+
+// impl<T: Config + Send + Sync> SignedExtension for PrevalidateGiftClaim<T> where
+// 	<T as frame_system::Config>::Call: IsSubType<Call<T>>
+// {
+// 	type AccountId = T::AccountId;
+// 	type Call = <T as frame_system::Config>::Call;
+// 	type AdditionalSigned = ();
+// 	type Pre = ();
+// 	const IDENTIFIER: &'static str = "PrevalidateGiftClaim";
+
+// 	fn additional_signed(&self) -> Result<Self::AdditionalSigned, TransactionValidityError> {
+// 		Ok(())
+// 	}
+
+// 	// <weight>
+// 	// The weight of this logic is included in the `attest` dispatchable.
+// 	// </weight>
+// 	fn validate(
+// 		&self,
+// 		who: &Self::AccountId,
+// 		call: &Self::Call,
+// 		_info: &DispatchInfoOf<Self::Call>,
+// 		_len: usize,
+// 	) -> TransactionValidity {
+// 		if let Some(local_call) = call.is_sub_type() {
+// 			if let Call::claim(pub_key, signature) = local_call {
+
+// 				let signer = Preclaims::<T>::get(who)
+// 					.ok_or(InvalidTransaction::Custom(ValidityError::SignerHasNoClaim.into()))?;
+// 				if let Some(s) = Signing::get(signer) {
+// 					let e = InvalidTransaction::Custom(ValidityError::InvalidStatement.into());
+// 					ensure!(&attested_statement[..] == s.to_text(), e);
+// 				}
+// 			}
+// 		}
+// 		Ok(ValidTransaction::default())
+// 	}
+// }
