@@ -198,6 +198,7 @@ impl<T: Config + Send + Sync> SignedExtension for PrevalidateGiftClaim<T> where
 		Ok(())
 	}
 
+	// TODO: Handle the Invalid Transaction errors below better.
 	fn validate(
 		&self,
 		who: &Self::AccountId,
@@ -210,14 +211,14 @@ impl<T: Config + Send + Sync> SignedExtension for PrevalidateGiftClaim<T> where
 				Gifts::<T>::get(who).ok_or(InvalidTransaction::Custom(0))?;
 
 				// In Polkadot, the AccountId is always the same as the 32 byte public key.
-				let account_bytes: [u8; 32] = account_to_bytes(who).map_err(|_| InvalidTransaction::BadProof)?;
+				let account_bytes: [u8; 32] = account_to_bytes(who).map_err(|_| InvalidTransaction::Custom(1))?;
 				let account32: AccountId32 = account_bytes.into();
 
 				// The message of the signature should be who will be given the gift.
 				let message = to.encode();
 				match signature.verify(message.as_slice(), &account32) {
 					true => {},
-					false => return Err(InvalidTransaction::BadProof.into()),
+					false => return Err(InvalidTransaction::Custom(2).into()),
 				}
 			}
 		}
