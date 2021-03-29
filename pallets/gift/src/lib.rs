@@ -9,7 +9,7 @@ pub mod pallet {
 		traits::{Currency, ExistenceRequirement, ReservableCurrency},
 		weights::Pays,
 		sp_runtime::{
-			MultiSignature, MultiSigner,
+			MultiSignature,
 			traits::{CheckedAdd, Saturating, Zero},
 		},
 	};
@@ -119,12 +119,12 @@ pub mod pallet {
 
 			// In the pre-validation function we confirmed that the signature is accurate,
 			// so we don't need to validate again here and we can take the storage item directly.
-			let gift = Gifts::<T>::take(&to).ok_or(Error::<T>::NoGift)?;
+			let gift = Gifts::<T>::take(&who).ok_or(Error::<T>::NoGift)?;
 
 			let err_amount = T::Currency::unreserve(&gift.gifter, gift.deposit.saturating_add(gift.amount));
 			// Should always have enough reserved unless there is a bug somewhere.
 			debug_assert!(err_amount.is_zero());
-			let res = T::Currency::transfer(&who, &to, gift.amount, ExistenceRequirement::AllowDeath);
+			let res = T::Currency::transfer(&gift.gifter, &to, gift.amount, ExistenceRequirement::AllowDeath);
 			// Should never fail because we unreserve more than this above.
 			debug_assert!(res.is_ok());
 
@@ -151,69 +151,87 @@ pub mod pallet {
 	}
 }
 
-// /// Validate `claim` calls prior to execution. Needed to avoid a DoS attack since they are
-// /// otherwise free to place on chain.
-// #[derive(Encode, Decode, Clone, Eq, PartialEq)]
-// pub struct PrevalidateGiftClaim<T: Config + Send + Sync>(sp_std::marker::PhantomData<T>) where
-// 	<T as frame_system::Config>::Call: IsSubType<Call<T>>;
+use codec::{Encode, Decode};
+use frame_support::{
+	pallet_prelude::*,
+	traits::IsSubType,
+	sp_runtime::traits::{DispatchInfoOf, SignedExtension, Verify},
+};
+use sp_core::crypto::AccountId32;
 
-// impl<T: Config + Send + Sync> Debug for PrevalidateGiftClaim<T> where
-// 	<T as frame_system::Config>::Call: IsSubType<Call<T>>
-// {
-// 	#[cfg(feature = "std")]
-// 	fn fmt(&self, f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
-// 		write!(f, "PrevalidateGiftClaim")
-// 	}
+#[derive(Encode, Decode, Clone, Eq, PartialEq)]
+pub struct PrevalidateGiftClaim<T: Config + Send + Sync>(core::marker::PhantomData<T>) where
+	<T as frame_system::Config>::Call: IsSubType<Call<T>>;
 
-// 	#[cfg(not(feature = "std"))]
-// 	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
-// 		Ok(())
-// 	}
-// }
+impl<T: Config + Send + Sync> core::fmt::Debug for PrevalidateGiftClaim<T> where
+	<T as frame_system::Config>::Call: IsSubType<Call<T>>
+{
+	#[cfg(feature = "std")]
+	fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+		write!(f, "PrevalidateGiftClaim")
+	}
 
-// impl<T: Config + Send + Sync> PrevalidateGiftClaim<T> where
-// 	<T as frame_system::Config>::Call: IsSubType<Call<T>>
-// {
-// 	/// Create new `SignedExtension` to check runtime version.
-// 	pub fn new() -> Self {
-// 		Self(sp_std::marker::PhantomData)
-// 	}
-// }
+	#[cfg(not(feature = "std"))]
+	fn fmt(&self, _: &mut core::fmt::Formatter) -> core::fmt::Result {
+		Ok(())
+	}
+}
 
-// impl<T: Config + Send + Sync> SignedExtension for PrevalidateGiftClaim<T> where
-// 	<T as frame_system::Config>::Call: IsSubType<Call<T>>
-// {
-// 	type AccountId = T::AccountId;
-// 	type Call = <T as frame_system::Config>::Call;
-// 	type AdditionalSigned = ();
-// 	type Pre = ();
-// 	const IDENTIFIER: &'static str = "PrevalidateGiftClaim";
+impl<T: Config + Send + Sync> PrevalidateGiftClaim<T> where
+	<T as frame_system::Config>::Call: IsSubType<Call<T>>
+{
+	pub fn new() -> Self {
+		Self(core::marker::PhantomData)
+	}
+}
 
-// 	fn additional_signed(&self) -> Result<Self::AdditionalSigned, TransactionValidityError> {
-// 		Ok(())
-// 	}
+impl<T: Config + Send + Sync> SignedExtension for PrevalidateGiftClaim<T> where
+	<T as frame_system::Config>::Call: IsSubType<Call<T>>
+{
+	type AccountId = T::AccountId;
+	type Call = <T as frame_system::Config>::Call;
+	type AdditionalSigned = ();
+	type Pre = ();
+	const IDENTIFIER: &'static str = "PrevalidateGiftClaim";
 
-// 	// <weight>
-// 	// The weight of this logic is included in the `attest` dispatchable.
-// 	// </weight>
-// 	fn validate(
-// 		&self,
-// 		who: &Self::AccountId,
-// 		call: &Self::Call,
-// 		_info: &DispatchInfoOf<Self::Call>,
-// 		_len: usize,
-// 	) -> TransactionValidity {
-// 		if let Some(local_call) = call.is_sub_type() {
-// 			if let Call::claim(pub_key, signature) = local_call {
+	fn additional_signed(&self) -> Result<Self::AdditionalSigned, TransactionValidityError> {
+		Ok(())
+	}
 
-// 				let signer = Preclaims::<T>::get(who)
-// 					.ok_or(InvalidTransaction::Custom(ValidityError::SignerHasNoClaim.into()))?;
-// 				if let Some(s) = Signing::get(signer) {
-// 					let e = InvalidTransaction::Custom(ValidityError::InvalidStatement.into());
-// 					ensure!(&attested_statement[..] == s.to_text(), e);
-// 				}
-// 			}
-// 		}
-// 		Ok(ValidTransaction::default())
-// 	}
-// }
+	fn validate(
+		&self,
+		who: &Self::AccountId,
+		call: &Self::Call,
+		_info: &DispatchInfoOf<Self::Call>,
+		_len: usize,
+	) -> TransactionValidity {
+		if let Some(local_call) = call.is_sub_type() {
+			if let Call::claim(to, signature) = local_call {
+				Gifts::<T>::get(who).ok_or(InvalidTransaction::Custom(0))?;
+
+				// In Polkadot, the AccountId is always the same as the 32 byte public key.
+				let account_bytes: [u8; 32] = account_to_bytes(who).map_err(|_| InvalidTransaction::BadProof)?;
+				let account32: AccountId32 = account_bytes.into();
+
+				// The message of the signature should be who will be given the gift.
+				let message = to.encode();
+				match signature.verify(message.as_slice(), &account32) {
+					true => {},
+					false => return Err(InvalidTransaction::BadProof.into()),
+				}
+			}
+		}
+		Ok(ValidTransaction::default())
+	}
+}
+
+// This function converts a 32 byte AccountId to its byte-array equivalent form.
+fn account_to_bytes<AccountId>(account: &AccountId) -> Result<[u8; 32], DispatchError>
+	where AccountId: Encode,
+{
+	let account_vec = account.encode();
+	ensure!(account_vec.len() == 32, "AccountId must be 32 bytes.");
+	let mut bytes = [0u8; 32];
+	bytes.copy_from_slice(&account_vec);
+	Ok(bytes)
+}
