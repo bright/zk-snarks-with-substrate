@@ -13,19 +13,10 @@ targets = ['x86_64-unknown-linux-gnu']
 [build-dependencies]
 substrate-wasm-builder = '4.0.0'
 
-# alias "parity-scale-code" to "codec"
-[dependencies.codec]
-default-features = false
-features = ['derive']
-package = 'parity-scale-codec'
-version = '2.0.0'
-
 [dependencies]
+codec = { default-features = false, features = ['derive'], package = 'parity-scale-codec', version = '2.0.0' }
 hex-literal = { optional = true, version = '0.3.1' }
-serde = { features = ['derive'], optional = true, version = '1.0.119' }
-
-# local dependencies
-pallet-template = { path = '../pallets/template', default-features = false, version = '3.0.0' }
+serde = { version = "1.0.119", optional = true, features = ["derive"] }
 
 # Substrate dependencies
 frame-benchmarking = { default-features = false, optional = true, version = '3.0.0' }
@@ -54,25 +45,28 @@ sp-std = { default-features = false, version = '3.0.0' }
 sp-transaction-pool = { default-features = false, version = '3.0.0' }
 sp-version = { default-features = false, version = '3.0.0' }
 
+# local dependencies
+pallet-template = { default-features = false, path = '../pallets/template', version = '3.0.0' }
+
 [features]
 default = ['std']
 runtime-benchmarks = [
-    'hex-literal',
     'frame-benchmarking',
     'frame-support/runtime-benchmarks',
     'frame-system-benchmarking',
     'frame-system/runtime-benchmarks',
+    'hex-literal',
     'pallet-balances/runtime-benchmarks',
+    'pallet-template/runtime-benchmarks',
     'pallet-timestamp/runtime-benchmarks',
     'sp-runtime/runtime-benchmarks',
 ]
 std = [
     'codec/std',
-    'serde',
     'frame-executive/std',
     'frame-support/std',
-    'frame-system/std',
     'frame-system-rpc-runtime-api/std',
+    'frame-system/std',
     'pallet-aura/std',
     'pallet-balances/std',
     'pallet-grandpa/std',
@@ -80,8 +74,9 @@ std = [
     'pallet-sudo/std',
     'pallet-template/std',
     'pallet-timestamp/std',
-    'pallet-transaction-payment/std',
     'pallet-transaction-payment-rpc-runtime-api/std',
+    'pallet-transaction-payment/std',
+    'serde',
     'sp-api/std',
     'sp-block-builder/std',
     'sp-consensus-aura/std',

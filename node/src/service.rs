@@ -8,7 +8,7 @@ use sc_service::{error::Error as ServiceError, Configuration, TaskManager};
 use sp_inherents::InherentDataProviders;
 use sc_executor::native_executor_instance;
 pub use sc_executor::NativeExecutor;
-use sp_consensus_aura::sr25519::{AuthorityPair as AuraPair};
+use sp_consensus_aura::sr25519::AuthorityPair as AuraPair;
 use sc_finality_grandpa::SharedVoterState;
 use sc_keystore::LocalKeystore;
 
@@ -42,7 +42,7 @@ pub fn new_partial(config: &Configuration) -> Result<sc_service::PartialComponen
 		return Err(ServiceError::Other(
 			format!("Remote Keystores are not supported.")))
 	}
-	let inherent_data_providers = sp_inherents::InherentDataProviders::new();
+	let inherent_data_providers = InherentDataProviders::new();
 
 	let (client, backend, keystore_container, task_manager) =
 		sc_service::new_full_parts::<Block, RuntimeApi, Executor>(&config)?;
@@ -59,7 +59,9 @@ pub fn new_partial(config: &Configuration) -> Result<sc_service::PartialComponen
 	);
 
 	let (grandpa_block_import, grandpa_link) = sc_finality_grandpa::block_import(
-		client.clone(), &(client.clone() as Arc<_>), select_chain.clone(),
+		client.clone(),
+		&(client.clone() as Arc<_>),
+		select_chain.clone(),
 	)?;
 
 	let aura_block_import = sc_consensus_aura::AuraBlockImport::<_, _, _, AuraPair>::new(
@@ -78,7 +80,13 @@ pub fn new_partial(config: &Configuration) -> Result<sc_service::PartialComponen
 	)?;
 
 	Ok(sc_service::PartialComponents {
-		client, backend, task_manager, import_queue, keystore_container, select_chain, transaction_pool,
+		client,
+		backend,
+		task_manager,
+		import_queue,
+		keystore_container,
+		select_chain,
+		transaction_pool,
 		inherent_data_providers,
 		other: (aura_block_import, grandpa_link),
 	})
@@ -94,7 +102,13 @@ fn remote_keystore(_url: &String) -> Result<Arc<LocalKeystore>, &'static str> {
 /// Builds a new service for a full client.
 pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> {
 	let sc_service::PartialComponents {
-		client, backend, mut task_manager, import_queue, mut keystore_container, select_chain, transaction_pool,
+		client,
+		backend,
+		mut task_manager,
+		import_queue,
+		mut keystore_container,
+		select_chain,
+		transaction_pool,
 		inherent_data_providers,
 		other: (block_import, grandpa_link),
 	} = new_partial(&config)?;
@@ -168,7 +182,7 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
 	)?;
 
 	if role.is_authority() {
-		let proposer = sc_basic_authorship::ProposerFactory::new(
+		let proposer_factory = sc_basic_authorship::ProposerFactory::new(
 			task_manager.spawn_handle(),
 			client.clone(),
 			transaction_pool,
@@ -178,12 +192,12 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
 		let can_author_with =
 			sp_consensus::CanAuthorWithNativeVersion::new(client.executor().clone());
 
-		let aura = sc_consensus_aura::start_aura::<_, _, _, _, _, AuraPair, _, _, _, _>(
+		let aura = sc_consensus_aura::start_aura::<_, _, _, _, _, AuraPair, _, _, _,_>(
 			sc_consensus_aura::slot_duration(&*client)?,
 			client.clone(),
 			select_chain,
 			block_import,
-			proposer,
+			proposer_factory,
 			network.clone(),
 			inherent_data_providers.clone(),
 			force_authoring,
@@ -226,10 +240,10 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
 			config: grandpa_config,
 			link: grandpa_link,
 			network,
-			telemetry_on_connect: telemetry_connection_notifier.map(|x| x.on_connect_stream()),
 			voting_rule: sc_finality_grandpa::VotingRulesBuilder::default().build(),
 			prometheus_registry,
 			shared_voter_state: SharedVoterState::empty(),
+			telemetry_on_connect: telemetry_connection_notifier.map(|x| x.on_connect_stream()),
 		};
 
 		// the GRANDPA voter task is considered infallible, i.e.
