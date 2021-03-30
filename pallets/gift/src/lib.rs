@@ -8,10 +8,7 @@ pub mod pallet {
 		pallet_prelude::*,
 		traits::{Currency, ExistenceRequirement, ReservableCurrency},
 		weights::Pays,
-		sp_runtime::{
-			MultiSignature,
-			traits::{CheckedAdd, Saturating, Zero},
-		},
+		sp_runtime::traits::{CheckedAdd, Saturating, Zero},
 	};
 	use frame_system::pallet_prelude::*;
 
@@ -101,7 +98,6 @@ pub mod pallet {
 			T::Currency::reserve(&who, total_reserve)?;
 
 			// All checks have passed, so let's create the gift.
-
 			let gift = GiftInfo {
 				gifter: who,
 				deposit,
@@ -114,11 +110,12 @@ pub mod pallet {
 		}
 
 		#[pallet::weight((0, Pays::No))] // Does not pay fee, so we MUST prevalidate this function
-		fn claim(origin: OriginFor<T>, to: T::AccountId, _signature: MultiSignature) -> DispatchResultWithPostInfo {
+		fn claim(origin: OriginFor<T>, to: T::AccountId) -> DispatchResultWithPostInfo {
+			// In the pre-validation function we confirmed that this user has a gift,
+			// and this signed transaction is enough for them to claim it to whomever.
 			let who = ensure_signed(origin)?;
 
-			// In the pre-validation function we confirmed that the signature is accurate,
-			// so we don't need to validate again here and we can take the storage item directly.
+			// They should 100% have a gift, but no reason not to handle the error anyway.
 			let gift = Gifts::<T>::take(&who).ok_or(Error::<T>::NoGift)?;
 
 			let err_amount = T::Currency::unreserve(&gift.gifter, gift.deposit.saturating_add(gift.amount));
@@ -155,9 +152,8 @@ use codec::{Encode, Decode};
 use frame_support::{
 	pallet_prelude::*,
 	traits::IsSubType,
-	sp_runtime::traits::{DispatchInfoOf, SignedExtension, Verify},
+	sp_runtime::traits::{DispatchInfoOf, SignedExtension},
 };
-use sp_core::crypto::AccountId32;
 
 #[derive(Encode, Decode, Clone, Eq, PartialEq)]
 pub struct PrevalidateGiftClaim<T: Config + Send + Sync>(core::marker::PhantomData<T>) where
@@ -198,7 +194,6 @@ impl<T: Config + Send + Sync> SignedExtension for PrevalidateGiftClaim<T> where
 		Ok(())
 	}
 
-	// TODO: Handle the Invalid Transaction errors below better.
 	fn validate(
 		&self,
 		who: &Self::AccountId,
@@ -207,32 +202,11 @@ impl<T: Config + Send + Sync> SignedExtension for PrevalidateGiftClaim<T> where
 		_len: usize,
 	) -> TransactionValidity {
 		if let Some(local_call) = call.is_sub_type() {
-			if let Call::claim(to, signature) = local_call {
-				Gifts::<T>::get(who).ok_or(InvalidTransaction::Custom(0))?;
-
-				// In Polkadot, the AccountId is always the same as the 32 byte public key.
-				let account_bytes: [u8; 32] = account_to_bytes(who).map_err(|_| InvalidTransaction::Custom(1))?;
-				let account32: AccountId32 = account_bytes.into();
-
-				// The message of the signature should be who will be given the gift.
-				let message = to.encode();
-				match signature.verify(message.as_slice(), &account32) {
-					true => {},
-					false => return Err(InvalidTransaction::Custom(2).into()),
-				}
+			if let Call::claim(_to) = local_call {
+				// All we need to check is that the caller has a gift they own.
+				Gifts::<T>::get(who).ok_or(InvalidTransaction::BadProof)?;
 			}
 		}
 		Ok(ValidTransaction::default())
 	}
-}
-
-// This function converts a 32 byte AccountId to its byte-array equivalent form.
-fn account_to_bytes<AccountId>(account: &AccountId) -> Result<[u8; 32], DispatchError>
-	where AccountId: Encode,
-{
-	let account_vec = account.encode();
-	ensure!(account_vec.len() == 32, "AccountId must be 32 bytes.");
-	let mut bytes = [0u8; 32];
-	bytes.copy_from_slice(&account_vec);
-	Ok(bytes)
 }
