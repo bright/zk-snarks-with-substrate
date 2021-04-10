@@ -23,6 +23,7 @@ use sp_version::RuntimeVersion;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 
+
 // A few exports that help ease life for downstream crates.
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -38,6 +39,11 @@ pub use frame_support::{
 	},
 };
 use pallet_transaction_payment::CurrencyAdapter;
+
+/// Import the EVM pallet.
+use pallet_evm::{
+	HashedAddressMapping, EnsureAddressTruncated
+};
 
 /// Import the template pallet.
 pub use pallet_template;
@@ -265,6 +271,27 @@ impl pallet_sudo::Config for Runtime {
 	type Call = Call;
 }
 
+// EVM parameters
+parameter_types! {
+	pub const LeetChainId: u64 = 1337;
+}
+
+/// Configure the EVM pallet
+impl pallet_evm::Config for Runtime {
+	type ChainId = LeetChainId;
+	type FeeCalculator = ();
+	type Event = Event;
+	type Currency = Balances;
+	type CallOrigin = EnsureAddressTruncated;
+	type WithdrawOrigin = EnsureAddressTruncated;
+	type AddressMapping = HashedAddressMapping<BlakeTwo256>;
+	type GasWeightMapping = ();
+	type Precompiles = ();
+	type Runner = pallet_evm::runner::stack::Runner<Self>;
+	type OnChargeTransaction = ();
+	type BlockGasLimit = ();
+}
+
 /// Configure the pallet-template in pallets/template.
 impl pallet_template::Config for Runtime {
 	type Event = Event;
@@ -285,6 +312,8 @@ construct_runtime!(
 		Balances: pallet_balances::{Module, Call, Storage, Config<T>, Event<T>},
 		TransactionPayment: pallet_transaction_payment::{Module, Storage},
 		Sudo: pallet_sudo::{Module, Call, Config<T>, Storage, Event<T>},
+		// Include the EVM pallet-template in the runtime.
+		EVM: pallet_evm::{Module, Call, Storage, Config, Event<T>},
 		// Include the custom logic from the pallet-template in the runtime.
 		TemplateModule: pallet_template::{Module, Call, Storage, Event<T>},
 	}
