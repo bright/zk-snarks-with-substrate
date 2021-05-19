@@ -75,14 +75,6 @@ RUST_LOG=debug RUST_BACKTRACE=1 ./target/release/node-template -lruntime=debug -
 Once the node template is running locally, you can connect it with **Polkadot-JS Apps** front-end
 to interact with your chain. [Click here](https://polkadot.js.org/apps/#/explorer?rpc=ws://localhost:9944) connecting the Apps to your local node template.
 
-Due to recent Substrate upgrade, paste the following custom types JSON in **Setting** > **Developer**
-
-```json
-{
-  "AccountInfo": "AccountInfoWithDualRefCount"
-}
-```
-
 ### Multi-Node Local Testnet
 
 If you want to see the multi-node consensus algorithm in action, refer to
