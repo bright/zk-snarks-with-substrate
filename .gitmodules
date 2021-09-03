@@ -1,0 +1,3 @@
+[submodule "substrate-front-end-template"]
+	path = substrate-front-end-template
+	url = https://github.com/substrate-developer-hub/substrate-front-end-template.git
