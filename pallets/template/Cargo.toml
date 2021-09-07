@@ -1,37 +1,34 @@
 [package]
 authors = ['Substrate DevHub <https://github.com/substrate-developer-hub>']
-description = 'Substrate FRAME pallet template for defining custom runtime logic.'
+description = 'FRAME pallet template for defining custom runtime logic.'
 edition = '2018'
 homepage = 'https://substrate.dev'
 license = 'Unlicense'
 name = 'pallet-template'
 publish = false
-repository = 'https://github.com/substrate-developer-hub/substrate-node-template/'
-version = '3.0.0-monthly-2021-08'
 readme = 'README.md'
+repository = 'https://github.com/substrate-developer-hub/substrate-node-template/'
+version = '3.0.0-monthly-2021-09+1'
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
 
-[dev-dependencies.serde]
-version = '1.0.126'
-
 [dev-dependencies.sp-core]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-08'
+tag = 'monthly-2021-09+1'
 version = '4.0.0-dev'
 
 [dev-dependencies.sp-io]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-08'
+tag = 'monthly-2021-09+1'
 version = '4.0.0-dev'
 
 [dev-dependencies.sp-runtime]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-08'
+tag = 'monthly-2021-09+1'
 version = '4.0.0-dev'
 
 [dependencies.codec]
@@ -44,19 +41,19 @@ version = '2.0.0'
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
 optional = true
-tag = 'monthly-2021-08'
+tag = 'monthly-2021-09+1'
 version = '4.0.0-dev'
 
 [dependencies.frame-support]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-08'
+tag = 'monthly-2021-09+1'
 version = '4.0.0-dev'
 
 [dependencies.frame-system]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-08'
+tag = 'monthly-2021-09+1'
 version = '4.0.0-dev'
 
 [features]
