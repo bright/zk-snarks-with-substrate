@@ -14,12 +14,16 @@
     3000,
     9944
   ],
-  "preCreateCommand": ["cargo build", "cargo check"],
-  "postStartCommand": "./target/debug/node-template --dev --ws-external",
+  "preCreateCommand": ["cargo build", "cargo check", "cd substrate-front-end-template && yarn"],
+  "postStartCommand": ["./target/debug/node-template --dev --ws-external", "cd substrate-front-end-template && yarn start"],
   "menuActions": [
     {"id": "polkadotjs",
      "label": "Open PolkadotJS Apps",
      "type": "external-preview",
-     "args": ["https://polkadot.js.org/apps/?rpc=wss%3A%2F%2F/$HOST/wss"]}
+     "args": ["https://polkadot.js.org/apps/?rpc=wss%3A%2F%2F/$HOST/wss"]},
+    {"id": "frontend",
+     "label": "Open Frontend",
+     "type": "external-preview",
+     "args": ["https://jeluard.playground.substrate.dev/frontend"]}
   ]
 }
