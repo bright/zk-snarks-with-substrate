@@ -20,10 +20,6 @@
     {"id": "polkadotjs",
      "label": "Open PolkadotJS Apps",
      "type": "external-preview",
-     "args": ["https://polkadot.js.org/apps/?rpc=wss%3A%2F%2F/$HOST/wss"]},
-    {"id": "frontend",
-     "label": "Open Frontend",
-     "type": "external-preview",
-     "args": ["https://jeluard.playground.substrate.dev/frontend"]}
+     "args": ["https://polkadot.js.org/apps/?rpc=wss%3A%2F%2F/$HOST/wss"]}
   ]
 }
