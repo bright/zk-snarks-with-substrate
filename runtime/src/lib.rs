@@ -277,13 +277,13 @@ impl pallet_template::Config for Runtime {
 	type Event = Event;
 }
 
-/// Add this code block to your template for Nicks:
+// Add this code block to your template for Nicks
 parameter_types! {
 	// Choose a fee that incentivizes desireable behavior.
 	pub const NickReservationFee: u128 = 100;
-	pub const MinNickLength: usize = 8;
+	pub const MinNickLength: u32 = 8;
 	// Maximum bounds on storage are important to secure your chain.
-	pub const MaxNickLength: usize = 32;
+	pub const MaxNickLength: u32 = 32;
 }
 
 impl pallet_nicks::Config for Runtime {
