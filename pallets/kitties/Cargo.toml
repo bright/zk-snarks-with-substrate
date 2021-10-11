@@ -17,15 +17,15 @@ codec = { default-features = false, features = ['derive'], package = 'parity-sca
 serde = { version = "1.0.119" }
 log = { version = "0.4.14", default-features = false }
 
-frame-system = { default-features = false, git = 'https://github.com/paritytech/substrate.git', tag = 'monthly-2021-08', version = '4.0.0-dev' }
-frame-support = { default-features = false, git = 'https://github.com/paritytech/substrate.git', tag = 'monthly-2021-08', version = '4.0.0-dev' }
-frame-benchmarking = { default-features = false, optional = true, git = 'https://github.com/paritytech/substrate.git', tag = 'monthly-2021-08', version = '4.0.0-dev' }
-sp-std = { default-features = false, git = 'https://github.com/paritytech/substrate.git', tag = 'monthly-2021-08', version = '4.0.0-dev' }
-pallet-randomness-collective-flip = { default-features = false, git = 'https://github.com/paritytech/substrate.git', tag = 'monthly-2021-08', version = '4.0.0-dev' }
-pallet-balances = { default-features = false, git = 'https://github.com/paritytech/substrate.git', tag = 'monthly-2021-08', version = '4.0.0-dev' }
-sp-core = { default-features = false, git = 'https://github.com/paritytech/substrate.git', tag = 'monthly-2021-08', version = '4.0.0-dev' }
-sp-io = { default-features = false, git = 'https://github.com/paritytech/substrate.git', tag = 'monthly-2021-08', version = '4.0.0-dev' }
-sp-runtime = { default-features = false, git = 'https://github.com/paritytech/substrate.git', tag = 'monthly-2021-08', version = '4.0.0-dev' }
+frame-system = { default-features = false, git = 'https://github.com/paritytech/substrate.git', tag = 'monthly-2021-10', version = '4.0.0-dev' }
+frame-support = { default-features = false, git = 'https://github.com/paritytech/substrate.git', tag = 'monthly-2021-10', version = '4.0.0-dev' }
+frame-benchmarking = { default-features = false, optional = true, git = 'https://github.com/paritytech/substrate.git', tag = 'monthly-2021-10', version = '4.0.0-dev' }
+sp-std = { default-features = false, git = 'https://github.com/paritytech/substrate.git', tag = 'monthly-2021-10', version = '4.0.0-dev' }
+pallet-randomness-collective-flip = { default-features = false, git = 'https://github.com/paritytech/substrate.git', tag = 'monthly-2021-10', version = '4.0.0-dev' }
+pallet-balances = { default-features = false, git = 'https://github.com/paritytech/substrate.git', tag = 'monthly-2021-10', version = '4.0.0-dev' }
+sp-core = { default-features = false, git = 'https://github.com/paritytech/substrate.git', tag = 'monthly-2021-10', version = '4.0.0-dev' }
+sp-io = { default-features = false, git = 'https://github.com/paritytech/substrate.git', tag = 'monthly-2021-10', version = '4.0.0-dev' }
+sp-runtime = { default-features = false, git = 'https://github.com/paritytech/substrate.git', tag = 'monthly-2021-10', version = '4.0.0-dev' }
 
 [features]
 default = ['std']
