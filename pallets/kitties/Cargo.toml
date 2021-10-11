@@ -16,6 +16,7 @@ targets = ['x86_64-unknown-linux-gnu']
 codec = { default-features = false, features = ['derive'], package = 'parity-scale-codec', version = '2.0.0' }
 serde = { version = "1.0.119" }
 log = { version = "0.4.14", default-features = false }
+scale-info = { default-features = false, features = ['derive'], version = "1.0" }
 
 frame-system = { default-features = false, git = 'https://github.com/paritytech/substrate.git', tag = 'monthly-2021-10', version = '4.0.0-dev' }
 frame-support = { default-features = false, git = 'https://github.com/paritytech/substrate.git', tag = 'monthly-2021-10', version = '4.0.0-dev' }
@@ -32,6 +33,7 @@ default = ['std']
 std = [
 	'codec/std',
 	'log/std',
+	'scale-info/std',
 	'frame-benchmarking/std',
 	'frame-support/std',
 	'frame-system/std',

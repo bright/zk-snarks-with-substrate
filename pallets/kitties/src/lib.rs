@@ -18,6 +18,7 @@ pub mod pallet {
 		transactional
 	};
 	use sp_io::hashing::blake2_128;
+	use scale_info::TypeInfo;
 
 	#[cfg(feature = "std")]
 	use serde::{Deserialize, Serialize};
@@ -27,7 +28,8 @@ pub mod pallet {
 		<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
 	// Struct for holding Kitty information.
-	#[derive(Clone, Encode, Decode, PartialEq)]
+	#[derive(Clone, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo)]
+	#[scale_info(skip_type_params(T))]
 	pub struct Kitty<T: Config> {
 		pub dna: [u8; 16],   // Using 16 bytes to represent a kitty DNA
 		pub price: Option<BalanceOf<T>>,
@@ -36,7 +38,8 @@ pub mod pallet {
 	}
 
 	// Set Gender type in Kitty struct.
-	#[derive(Encode, Decode, Debug, Clone, PartialEq)]
+	#[derive(Clone, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo)]
+	#[scale_info(skip_type_params(T))]
 	#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 	pub enum Gender {
 		Male,
@@ -44,7 +47,7 @@ pub mod pallet {
 	}
 
 	#[pallet::pallet]
-	#[pallet::generate_store(trait Store)]
+	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
 
 	// Configure the pallet by specifying the parameters and types on which it depends.
@@ -88,7 +91,6 @@ pub mod pallet {
 	}
 
 	#[pallet::event]
-	#[pallet::metadata(T::AccountId = "AccountId")]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// A new Kitty was sucessfully created. \[sender, kitty_id\]
