@@ -58,7 +58,8 @@ pub mod pallet {
 		/// Event documentation should end with an array that provides descriptive names for event
 		/// parameters. [something, who]
 		SomethingStored(u32, T::AccountId),
-		Locked(T::AccountId, BalanceOf<T>)
+		Locked(T::AccountId, BalanceOf<T>),
+		Unlocked(T::AccountId),
 	}
 
 	// Errors inform users that something went wrong.
@@ -127,6 +128,19 @@ pub mod pallet {
 				WithdrawReasons::all(),
 			);
 			Self::deposit_event(Event::Locked(user, amount));
+			Ok(().into())
+		}
+
+		#[pallet::weight(1_000)]
+		pub fn unlock_all(
+			origin: OriginFor<T>,
+		) -> DispatchResultWithPostInfo {
+        
+			let user = ensure_signed(origin)?;
+			
+			T::Currency::remove_lock(EXAMPLE_ID, &user);
+			
+			Self::deposit_event(Event::Unlocked(user));
 			Ok(().into())
 		}
 	}
