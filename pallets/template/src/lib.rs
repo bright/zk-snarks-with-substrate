@@ -18,12 +18,24 @@ mod benchmarking;
 pub mod pallet {
 	use frame_support::{dispatch::DispatchResult, pallet_prelude::*};
 	use frame_system::pallet_prelude::*;
+	use frame_support::{
+		traits::{Currency, LockIdentifier, LockableCurrency, WithdrawReasons},
+	};
+
+	// The LockIdentifier constant.
+	const EXAMPLE_ID: LockIdentifier = *b"example ";
+
+	// The custom BalanceOf type.
+	type BalanceOf<T> =
+	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		/// The lockable currency type.
+		type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>;
 	}
 
 	#[pallet::pallet]
