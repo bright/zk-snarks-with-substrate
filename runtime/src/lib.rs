@@ -272,10 +272,18 @@ impl pallet_sudo::Config for Runtime {
 	type Call = Call;
 }
 
+// Define your account Id, make sure to store your key pairs.
+frame_support::ord_parameter_types! {
+    // `subkey inspect //locker`
+    pub const SpecialAccountId: AccountId = AccountId::from(
+		hex_literal::hex!["60f28d2abe90a6bbfef78dc50bf798d52582b1da3868d8f470b22831e5edac73"]);
+}
+
 /// Configure the pallet-template in pallets/template.
 impl pallet_template::Config for Runtime {
 	type Event = Event;
 	type LockedCurrency = Balances;
+	type SpecialAccountId = SpecialAccountId;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.

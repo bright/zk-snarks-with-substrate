@@ -36,6 +36,9 @@ pub mod pallet {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		/// The lockable currency type.
 		type LockedCurrency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>;
+		/// Sudo like origin, could be a single Account or Multisig.
+		#[pallet::constant]
+    	type SpecialAccountId: Get<Self::AccountId>;
 	}
 
 	#[pallet::pallet]
@@ -121,6 +124,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			
 			let user = ensure_signed(origin)?;
+            ensure!(user == T::SpecialAccountId::get(), DispatchError::BadOrigin);
 
 			T::LockedCurrency::set_lock(
 				EXAMPLE_ID,
