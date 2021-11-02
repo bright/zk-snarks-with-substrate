@@ -27,7 +27,7 @@ pub mod pallet {
 
 	// The custom BalanceOf type.
 	type BalanceOf<T> =
-	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+		<<T as Config>::LockedCurrency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
@@ -35,7 +35,7 @@ pub mod pallet {
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		/// The lockable currency type.
-		type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>;
+		type LockedCurrency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>;
 	}
 
 	#[pallet::pallet]
@@ -122,7 +122,7 @@ pub mod pallet {
 			
 			let user = ensure_signed(origin)?;
 
-			T::Currency::set_lock(
+			T::LockedCurrency::set_lock(
 				EXAMPLE_ID,
 				&user,
 				amount,
@@ -139,7 +139,7 @@ pub mod pallet {
         
 			let user = ensure_signed(origin)?;
 			
-			T::Currency::remove_lock(EXAMPLE_ID, &user);
+			T::LockedCurrency::remove_lock(EXAMPLE_ID, &user);
 			
 			Self::deposit_event(Event::Unlocked(user));
 			Ok(().into())
@@ -153,7 +153,7 @@ pub mod pallet {
 
 			let user = ensure_signed(origin)?;
 
-			T::Currency::extend_lock(
+			T::LockedCurrency::extend_lock(
 					EXAMPLE_ID,
 					&user,
 					amount,
