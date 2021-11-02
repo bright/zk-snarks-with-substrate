@@ -60,6 +60,7 @@ pub mod pallet {
 		SomethingStored(u32, T::AccountId),
 		Locked(T::AccountId, BalanceOf<T>),
 		Unlocked(T::AccountId),
+		LockExtended(T::AccountId, BalanceOf<T>),
 	}
 
 	// Errors inform users that something went wrong.
@@ -141,6 +142,25 @@ pub mod pallet {
 			T::Currency::remove_lock(EXAMPLE_ID, &user);
 			
 			Self::deposit_event(Event::Unlocked(user));
+			Ok(().into())
+		}
+
+		#[pallet::weight(1_000)]
+		pub fn extend_lock(
+			origin: OriginFor<T>,
+			#[pallet::compact] amount: BalanceOf<T>
+		) -> DispatchResultWithPostInfo {
+
+			let user = ensure_signed(origin)?;
+
+			T::Currency::extend_lock(
+					EXAMPLE_ID,
+					&user,
+					amount,
+					WithdrawReasons::empty(),
+			);
+
+			Self::deposit_event(Event::LockExtended(user, amount));
 			Ok(().into())
 		}
 	}
