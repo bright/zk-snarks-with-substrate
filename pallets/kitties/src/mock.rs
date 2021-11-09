@@ -94,7 +94,7 @@ pub(crate) fn new_test_ext() -> sp_io::TestExternalities {
 		balances: BalancesConfig {
 			balances: vec![(1,  10), (2,  10)]
 		},
-		kitties: KittiesConfig {
+		substrate_kitties: SubstrateKittiesConfig {
 			kitties: vec![
 				(1, *b"1234567890123456", Gender::Female),
 				(2, *b"123456789012345a", Gender::Male)
