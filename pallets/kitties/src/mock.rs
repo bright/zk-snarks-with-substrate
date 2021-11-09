@@ -23,7 +23,7 @@ frame_support::construct_runtime!(
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
-		Kitties: pallet_kitties::{Pallet, Call, Storage, Config<T>, Event<T>},
+		SubstrateKitties: pallet_kitties::{Pallet, Call, Storage, Config<T>, Event<T>},
 	}
 );
 
