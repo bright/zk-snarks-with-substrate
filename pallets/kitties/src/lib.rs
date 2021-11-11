@@ -164,7 +164,7 @@ pub mod pallet {
 			let kitty_id = Self::mint(&sender, None, None)?;
 
 			// Logging to the console
-			log::info!("A kitty is born with ID: {:?}.", kitty_id);
+			log::info!("🎈😺 A kitty is born with ID ➡ {:?}.", kitty_id);
 			// Deposit our "Created" event.
 			Self::deposit_event(Event::Created(sender, kitty_id));
 			Ok(())
