@@ -26,7 +26,7 @@ use sp_version::RuntimeVersion;
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
 	construct_runtime, parameter_types,
-	traits::{KeyOwnerProofSystem, Randomness, StorageInfo},
+	traits::{KeyOwnerProofSystem, Randomness, StorageInfo, EqualPrivilegeOnly},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
 		IdentityFee, Weight,
@@ -87,7 +87,7 @@ pub mod opaque {
 }
 
 // To learn more about runtime versioning and what each of the following value means:
-//   https://substrate.dev/docs/en/knowledgebase/runtime/upgrades#runtime-versioning
+//   https://docs.substrate.io/v3/runtime/upgrades#runtime-versioning
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("node-template"),
@@ -98,7 +98,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	//   `spec_version`, and `authoring_version` are the same between Wasm and native.
 	// This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
 	//   the compatible custom types.
-	spec_version: 101,
+	spec_version: 101,    // Increment this value for the runtime upgrade tutorial
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -195,9 +195,14 @@ impl frame_system::Config for Runtime {
 
 impl pallet_randomness_collective_flip::Config for Runtime {}
 
+parameter_types! {
+	pub const MaxAuthorities: u32 = 32;
+}
+
 impl pallet_aura::Config for Runtime {
 	type AuthorityId = AuraId;
 	type DisabledValidators = ();
+	type MaxAuthorities = MaxAuthorities;
 }
 
 impl pallet_grandpa::Config for Runtime {
@@ -217,6 +222,7 @@ impl pallet_grandpa::Config for Runtime {
 	type HandleEquivocation = ();
 
 	type WeightInfo = ();
+	type MaxAuthorities = MaxAuthorities;
 }
 
 parameter_types! {
@@ -252,11 +258,13 @@ impl pallet_balances::Config for Runtime {
 
 parameter_types! {
 	pub const TransactionByteFee: Balance = 1;
+	pub OperationalFeeMultiplier: u8 = 5;
 }
 
 impl pallet_transaction_payment::Config for Runtime {
 	type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
 	type TransactionByteFee = TransactionByteFee;
+	type OperationalFeeMultiplier = OperationalFeeMultiplier;
 	type WeightToFee = IdentityFee<Balance>;
 	type FeeMultiplierUpdate = ();
 }
@@ -287,6 +295,7 @@ impl pallet_scheduler::Config for Runtime {
 	type ScheduleOrigin = frame_system::EnsureRoot<AccountId>;
 	type MaxScheduledPerBlock = MaxScheduledPerBlock;
 	type WeightInfo = ();
+	type OriginPrivilegeCmp = EqualPrivilegeOnly;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -296,17 +305,17 @@ construct_runtime!(
 		NodeBlock = opaque::Block,
 		UncheckedExtrinsic = UncheckedExtrinsic
 	{
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
-		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
-		Aura: pallet_aura::{Pallet, Config<T>},
-		Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config, Event},
-		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-		TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
-		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
+		System: frame_system,
+		RandomnessCollectiveFlip: pallet_randomness_collective_flip,
+		Timestamp: pallet_timestamp,
+		Aura: pallet_aura,
+		Grandpa: pallet_grandpa,
+		Balances: pallet_balances,
+		TransactionPayment: pallet_transaction_payment,
+		Sudo: pallet_sudo,
 		// Include the custom logic from the pallet-template in the runtime.
-		TemplateModule: pallet_template::{Pallet, Call, Storage, Event<T>},
-		Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>},
+		TemplateModule: pallet_template,
+		Scheduler: pallet_scheduler,
 	}
 );
 
@@ -354,7 +363,7 @@ impl_runtime_apis! {
 
 	impl sp_api::Metadata<Block> for Runtime {
 		fn metadata() -> OpaqueMetadata {
-			Runtime::metadata().into()
+			OpaqueMetadata::new(Runtime::metadata().into())
 		}
 	}
 
@@ -401,7 +410,7 @@ impl_runtime_apis! {
 		}
 
 		fn authorities() -> Vec<AuraId> {
-			Aura::authorities()
+			Aura::authorities().into_inner()
 		}
 	}
 
@@ -474,12 +483,14 @@ impl_runtime_apis! {
 			Vec<frame_benchmarking::BenchmarkList>,
 			Vec<frame_support::traits::StorageInfo>,
 		) {
-			use frame_benchmarking::{list_benchmark, Benchmarking, BenchmarkList};
+			use frame_benchmarking::{list_benchmark, baseline, Benchmarking, BenchmarkList};
 			use frame_support::traits::StorageInfoTrait;
 			use frame_system_benchmarking::Pallet as SystemBench;
+			use baseline::Pallet as BaselineBench;
 
 			let mut list = Vec::<BenchmarkList>::new();
 
+			list_benchmark!(list, extra, frame_benchmarking, BaselineBench::<Runtime>);
 			list_benchmark!(list, extra, frame_system, SystemBench::<Runtime>);
 			list_benchmark!(list, extra, pallet_balances, Balances);
 			list_benchmark!(list, extra, pallet_timestamp, Timestamp);
@@ -493,10 +504,13 @@ impl_runtime_apis! {
 		fn dispatch_benchmark(
 			config: frame_benchmarking::BenchmarkConfig
 		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
-			use frame_benchmarking::{Benchmarking, BenchmarkBatch, add_benchmark, TrackedStorageKey};
+			use frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch, add_benchmark, TrackedStorageKey};
 
 			use frame_system_benchmarking::Pallet as SystemBench;
+			use baseline::Pallet as BaselineBench;
+
 			impl frame_system_benchmarking::Config for Runtime {}
+			impl baseline::Config for Runtime {}
 
 			let whitelist: Vec<TrackedStorageKey> = vec![
 				// Block Number
@@ -514,12 +528,12 @@ impl_runtime_apis! {
 			let mut batches = Vec::<BenchmarkBatch>::new();
 			let params = (&config, &whitelist);
 
+			add_benchmark!(params, batches, frame_benchmarking, BaselineBench::<Runtime>);
 			add_benchmark!(params, batches, frame_system, SystemBench::<Runtime>);
 			add_benchmark!(params, batches, pallet_balances, Balances);
 			add_benchmark!(params, batches, pallet_timestamp, Timestamp);
 			add_benchmark!(params, batches, pallet_template, TemplateModule);
 
-			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)
 		}
 	}
