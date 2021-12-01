@@ -1,29 +1,6 @@
-[package]
-name = 'node-template'
-version = '4.0.0-dev'
-description = 'A fresh FRAME-based Substrate node, ready for hacking.'
-authors = ['Substrate DevHub <https://github.com/substrate-developer-hub>']
-homepage = 'https://substrate.io/'
-edition = '2021'
-license = 'Unlicense'
-publish = false
-repository = 'https://github.com/substrate-developer-hub/substrate-node-template/'
-build = 'build.rs'
-
-[[bin]]
-name = 'node-template'
-
-[package.metadata.docs.rs]
-targets = ['x86_64-unknown-linux-gnu']
-
-[build-dependencies.substrate-build-script-utils]
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'devhub/latest'
-version = '3.0.0'
-
-[dependencies.node-template-runtime]
-path = '../runtime'
-version = '4.0.0-dev'
+[features]
+default = []
+runtime-benchmarks = ['node-template-runtime/runtime-benchmarks']
 
 [dependencies]
 jsonrpc-core = '18.0.0'
@@ -37,6 +14,10 @@ version = '4.0.0-dev'
 [dependencies.frame-benchmarking-cli]
 git = 'https://github.com/paritytech/substrate.git'
 tag = 'devhub/latest'
+version = '4.0.0-dev'
+
+[dependencies.node-template-runtime]
+path = '../runtime'
 version = '4.0.0-dev'
 
 [dependencies.pallet-transaction-payment-rpc]
@@ -166,7 +147,24 @@ version = '4.0.0-dev'
 git = 'https://github.com/paritytech/substrate.git'
 tag = 'devhub/latest'
 version = '4.0.0-dev'
+[build-dependencies.substrate-build-script-utils]
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'devhub/latest'
+version = '3.0.0'
 
-[features]
-default = []
-runtime-benchmarks = ['node-template-runtime/runtime-benchmarks']
+[[bin]]
+name = 'node-template'
+
+[package]
+authors = ['Substrate DevHub <https://github.com/substrate-developer-hub>']
+build = 'build.rs'
+description = 'A fresh FRAME-based Substrate node, ready for hacking.'
+edition = '2021'
+homepage = 'https://substrate.io/'
+license = 'Unlicense'
+name = 'node-template'
+publish = false
+repository = 'https://github.com/substrate-developer-hub/substrate-node-template/'
+version = '4.0.0-dev'
+[package.metadata.docs.rs]
+targets = ['x86_64-unknown-linux-gnu']
