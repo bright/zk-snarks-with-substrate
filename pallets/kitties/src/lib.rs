@@ -351,7 +351,7 @@ pub mod pallet {
 				.ok_or(<Error<T>>::KittyCntOverflow)?;
 
 			// Check if the kitty does not already exist in our storage map
-			ensure!(Self::kitties(&kitty_id) == None, <Error<T>>::KittyExists);
+			ensure!(Self::kitties(&kitty_id) == None, <Error<T>>::KittyNotExist);
 
 			// Performs this operation first because as it may fail
 			<KittiesOwned<T>>::try_mutate(&owner, |kitty_vec| {
