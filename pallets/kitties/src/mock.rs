@@ -1,5 +1,3 @@
-#![cfg(test)]
-
 use crate as pallet_kitties;
 use pallet_kitties::Gender;
 use frame_support::parameter_types;
