@@ -281,7 +281,7 @@ parameter_types! {
 	pub const MaxKittyOwned: u32 = 9999;
 }
 
-/// Configure the pallet-kitties in pallets/kitties.
+/// Configure pallet-kitties in pallets/kitties.
 impl pallet_kitties::Config for Runtime {
 	type Event = Event;
 	type Currency = Balances;

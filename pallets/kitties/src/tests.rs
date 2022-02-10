@@ -1,9 +1,7 @@
 #![cfg(test)]
 
-use crate::{
-	mock::*, pallet::{Error}
-};
-use frame_support::{assert_ok, assert_noop};
+use crate::{mock::*, pallet::Error};
+use frame_support::{assert_noop, assert_ok};
 
 #[test]
 fn should_build_genesis_kitties() {
@@ -20,13 +18,13 @@ fn should_build_genesis_kitties() {
 
 		// Check that kitties are owned correctly
 		let kid1 = kitties_owned_by_1[0];
-		let kitty1 = SubstrateKitties::kitties(kid1)
-			.expect("Could have this kitty ID owned by acct 1");
+		let kitty1 =
+			SubstrateKitties::kitties(kid1).expect("Could have this kitty ID owned by acct 1");
 		assert_eq!(kitty1.owner, 1);
 
 		let kid2 = kitties_owned_by_2[0];
-		let kitty2 = SubstrateKitties::kitties(kid2)
-			.expect("Could have this kitty ID owned by acct 2");
+		let kitty2 =
+			SubstrateKitties::kitties(kid2).expect("Could have this kitty ID owned by acct 2");
 		assert_eq!(kitty2.owner, 2);
 	});
 }
