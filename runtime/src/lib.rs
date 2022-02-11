@@ -88,7 +88,7 @@ pub mod opaque {
 }
 
 // To learn more about runtime versioning and what each of the following value means:
-//   https://substrate.io/docs/en/knowledgebase/runtime/upgrades#runtime-versioning
+//   https://docs.substrate.io/v3/runtime/upgrades#runtime-versioning
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("node-template"),
@@ -494,15 +494,12 @@ impl_runtime_apis! {
 
 		fn dispatch_benchmark(
 			config: frame_benchmarking::BenchmarkConfig
-		) -> Result<
-			(Vec<frame_benchmarking::BenchmarkBatch>, Vec<StorageInfo>),
-			sp_runtime::RuntimeString,
-		> {
+		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
 			use frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch, add_benchmark, TrackedStorageKey};
-			use frame_support::traits::StorageInfoTrait;
 
 			use frame_system_benchmarking::Pallet as SystemBench;
 			use baseline::Pallet as BaselineBench;
+
 			impl frame_system_benchmarking::Config for Runtime {}
 			impl baseline::Config for Runtime {}
 
@@ -519,8 +516,6 @@ impl_runtime_apis! {
 				hex_literal::hex!("26aa394eea5630e07c48ae0c9558cef780d41e5e16056765bc8461851072c9d7").to_vec().into(),
 			];
 
-			let storage_info = AllPalletsWithSystem::storage_info();
-
 			let mut batches = Vec::<BenchmarkBatch>::new();
 			let params = (&config, &whitelist);
 
@@ -530,7 +525,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_timestamp, Timestamp);
 			add_benchmark!(params, batches, pallet_template, TemplateModule);
 
-			Ok((batches, storage_info))
+			Ok(batches)
 		}
 	}
 }
