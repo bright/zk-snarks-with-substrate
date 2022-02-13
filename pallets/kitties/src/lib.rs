@@ -158,10 +158,8 @@ pub mod pallet {
 			let (kitty_gen_dna, gender) = Self::gen_dna();
 
 			// Write new kitty to storage by calling helper function
-			let kitty_dna = Self::mint(&sender, kitty_gen_dna, gender)?;
+			Self::mint(&sender, kitty_gen_dna, gender)?;
 
-			// Deposit our "Created" event.
-			Self::deposit_event(Event::Created { kitty: kitty_dna, owner: sender });
 			Ok(())
 		}
 
@@ -331,6 +329,9 @@ pub mod pallet {
 			// Write new kitty to storage
 			Kitties::<T>::insert(kitty.dna, kitty);
 			CountForKitties::<T>::put(new_count);
+
+			// Deposit our "Created" event.
+			Self::deposit_event(Event::Created { kitty: dna, owner: owner.clone() });
 
 			// Returns the DNA of the new kitty if this suceeds
 			Ok(dna)
