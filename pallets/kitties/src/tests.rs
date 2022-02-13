@@ -109,4 +109,24 @@ fn transfer_non_owned_kitty_should_fail() {
 
 // TODO: Check that breed kitty checks opposite gender.
 
-// TODO:
+// TODO: Test gen_dna and other dna functions behave as expected
+
+// TODO: Check transfer fails when transferring to self
+
+// TODO: Check transfer fails when no kitty exists
+
+// TODO: Check transfer fails when recipient has too many kitties.
+
+// TODO: Check buy_kitty works as expected.
+
+// TODO: Check buy_kitty fails when bid price is too low
+
+// TODO: Check buy_kitty transfers the right amount when bid price is too high
+
+// TODO: Check buy_kitty fails when balance is too low
+
+// TODO: Check buy_kitty fails when kitty is not for sale
+
+// TODO: Check set_price works as expected
+
+// TODO: Check set_price fails when not owner
