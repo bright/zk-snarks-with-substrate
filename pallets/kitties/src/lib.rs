@@ -71,8 +71,8 @@ pub mod pallet {
 	#[pallet::error]
 	pub enum Error<T> {
 		/// Handles arithemtic overflow when incrementing the kitty counter.
-		CountForKittyOverflow,
-		/// An account cannot own more kitties than `MaxCountForKitty`.
+		CountForKittiesOverflow,
+		/// An account cannot own more kitties than `MaxCountForKitties`.
 		ExceedMaxKittyOwned,
 		/// Buyer cannot be the owner.
 		BuyerIsKittyOwner,
@@ -109,17 +109,14 @@ pub mod pallet {
 
 	/// Keeps track of the number of kitties in existence.
 	#[pallet::storage]
-	#[pallet::getter(fn kitty_count)]
-	pub(super) type CountForKitty<T: Config> = StorageValue<_, u64, ValueQuery>;
+	pub(super) type CountForKitties<T: Config> = StorageValue<_, u64, ValueQuery>;
 
 	/// Maps the kitty struct to the kitty DNA.
 	#[pallet::storage]
-	#[pallet::getter(fn kitties)]
 	pub(super) type Kitties<T: Config> = StorageMap<_, Twox64Concat, [u8; 16], Kitty<T>>;
 
 	/// Track the kitties owned by each account.
 	#[pallet::storage]
-	#[pallet::getter(fn kitties_owned)]
 	pub(super) type KittiesOwned<T: Config> = StorageMap<
 		_,
 		Twox64Concat,
@@ -190,8 +187,8 @@ pub mod pallet {
 			let sender = ensure_signed(origin)?;
 
 			// Get the kitties.
-			let maybe_mom = Self::kitties(&parent_1).ok_or(Error::<T>::NonExistantKitty)?;
-			let maybe_dad = Self::kitties(&parent_2).ok_or(Error::<T>::NonExistantKitty)?;
+			let maybe_mom = Kitties::<T>::get(&parent_1).ok_or(Error::<T>::NonExistantKitty)?;
+			let maybe_dad = Kitties::<T>::get(&parent_2).ok_or(Error::<T>::NonExistantKitty)?;
 
 			// Check both parents are owned by the caller of this function
 			ensure!(maybe_mom.owner == sender, Error::<T>::NotKittyOwner);
@@ -222,7 +219,7 @@ pub mod pallet {
 			let from = ensure_signed(origin)?;
 
 			// Ensure the kitty exists and is called by the kitty owner
-			let kitty = Self::kitties(&kitty_id).ok_or(Error::<T>::NonExistantKitty)?;
+			let kitty = Kitties::<T>::get(&kitty_id).ok_or(Error::<T>::NonExistantKitty)?;
 			ensure!(kitty.owner == from, Error::<T>::NotKittyOwner);
 
 			// Verify the kitty is not transferring back to its owner.
@@ -257,7 +254,7 @@ pub mod pallet {
 			let buyer = ensure_signed(origin)?;
 
 			// Check the kitty exists and buyer is not the current kitty owner
-			let kitty = Self::kitties(&kitty_id).ok_or(Error::<T>::NonExistantKitty)?;
+			let kitty = Kitties::<T>::get(&kitty_id).ok_or(Error::<T>::NonExistantKitty)?;
 			let seller = kitty.owner;
 			ensure!(seller != buyer, Error::<T>::BuyerIsKittyOwner);
 
@@ -296,7 +293,7 @@ pub mod pallet {
 			let sender = ensure_signed(origin)?;
 
 			// Ensure the kitty exists and is called by the kitty owner
-			let mut kitty = Self::kitties(&kitty_id).ok_or(Error::<T>::NonExistantKitty)?;
+			let mut kitty = Kitties::<T>::get(&kitty_id).ok_or(Error::<T>::NonExistantKitty)?;
 			ensure!(kitty.owner == sender, Error::<T>::NotKittyOwner);
 
 			// Set the price in storage
@@ -375,8 +372,8 @@ pub mod pallet {
 			ensure!(!Kitties::<T>::contains_key(&kitty.dna), Error::<T>::NonExistantKitty);
 
 			// Performs this operation first as it may fail
-			let new_count =
-				Self::kitty_count().checked_add(1).ok_or(Error::<T>::CountForKittyOverflow)?;
+			let count = CountForKitties::<T>::get();
+			let new_count = count.checked_add(1).ok_or(Error::<T>::CountForKittiesOverflow)?;
 
 			// Append kitty to KittiesOwned
 			KittiesOwned::<T>::try_append(&owner, kitty.dna)
@@ -384,16 +381,20 @@ pub mod pallet {
 
 			// Write new kitty to storage
 			Kitties::<T>::insert(kitty.dna, kitty);
-			CountForKitty::<T>::put(new_count);
+			CountForKitties::<T>::put(new_count);
 
 			// Returns the DNA of the new kitty if this suceeds
 			Ok(dna)
 		}
 
 		// Update storage to transfer kitty
-		pub fn transfer_kitty_to(kitty_id: &[u8; 16], to: &T::AccountId, sale: bool) -> DispatchResult {
+		pub fn transfer_kitty_to(
+			kitty_id: &[u8; 16],
+			to: &T::AccountId,
+			sale: bool,
+		) -> DispatchResult {
 			// Get the kitty
-			let mut kitty = Self::kitties(&kitty_id).ok_or(Error::<T>::NonExistantKitty)?;
+			let mut kitty = Kitties::<T>::get(&kitty_id).ok_or(Error::<T>::NonExistantKitty)?;
 			let from = kitty.owner.clone();
 			let mut from_owned = KittiesOwned::<T>::get(&from);
 
@@ -401,7 +402,7 @@ pub mod pallet {
 			if let Some(ind) = from_owned.iter().position(|&id| id == *kitty_id) {
 				from_owned.swap_remove(ind);
 			} else {
-				return Err(Error::<T>::NonExistantKitty.into());
+				return Err(Error::<T>::NonExistantKitty.into())
 			}
 
 			// Add kitty to the list of owned kitties.
