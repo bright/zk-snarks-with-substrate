@@ -79,7 +79,7 @@ pub mod pallet {
 		/// Cannot transfer a kitty to its owner.
 		TransferToSelf,
 		/// Handles checking whether the kitty exists.
-		NonExistantKitty,
+		NonExistentKitty,
 		/// Handles checking that the kitty is owned by the account transferring, buying or setting
 		/// a price for it.
 		NotKittyOwner,
@@ -103,8 +103,8 @@ pub mod pallet {
 		PriceSet { kitty: [u8; 16], price: Option<BalanceOf<T>> },
 		/// A kitty was successfully transferred.
 		Transferred { from: T::AccountId, to: T::AccountId, kitty: [u8; 16] },
-		/// A kitty was successfully bought.
-		Bought { buyer: T::AccountId, seller: T::AccountId, kitty: [u8; 16], price: BalanceOf<T> },
+		/// A kitty was successfully sold.
+		Sold { seller: T::AccountId, buyer: T::AccountId, kitty: [u8; 16], price: BalanceOf<T> },
 	}
 
 	/// Keeps track of the number of kitties in existence.
@@ -187,8 +187,8 @@ pub mod pallet {
 			let sender = ensure_signed(origin)?;
 
 			// Get the kitties.
-			let maybe_mom = Kitties::<T>::get(&parent_1).ok_or(Error::<T>::NonExistantKitty)?;
-			let maybe_dad = Kitties::<T>::get(&parent_2).ok_or(Error::<T>::NonExistantKitty)?;
+			let maybe_mom = Kitties::<T>::get(&parent_1).ok_or(Error::<T>::NonExistentKitty)?;
+			let maybe_dad = Kitties::<T>::get(&parent_2).ok_or(Error::<T>::NonExistentKitty)?;
 
 			// Check both parents are owned by the caller of this function
 			ensure!(maybe_mom.owner == sender, Error::<T>::NotKittyOwner);
@@ -217,24 +217,9 @@ pub mod pallet {
 		) -> DispatchResult {
 			// Make sure the caller is from a signed origin
 			let from = ensure_signed(origin)?;
-
-			// Ensure the kitty exists and is called by the kitty owner
-			let kitty = Kitties::<T>::get(&kitty_id).ok_or(Error::<T>::NonExistantKitty)?;
+			let kitty = Kitties::<T>::get(&kitty_id).ok_or(Error::<T>::NonExistentKitty)?;
 			ensure!(kitty.owner == from, Error::<T>::NotKittyOwner);
-
-			// Verify the kitty is not transferring back to its owner.
-			ensure!(from != to, Error::<T>::TransferToSelf);
-
-			// Verify the recipient has the capacity to receive one more kitty
-			let to_owned = KittiesOwned::<T>::decode_len(&to).unwrap_or(0);
-			ensure!((to_owned as u32) < T::MaxKittyOwned::get(), Error::<T>::ExceedMaxKittyOwned);
-
-			// Write to storage using helper function
-			Self::transfer_kitty_to(&kitty_id, &to, false)?;
-
-			// Deposit an event
-			Self::deposit_event(Event::Transferred { from, to, kitty: kitty_id });
-
+			Self::do_transfer(kitty_id, to, false)?;
 			Ok(())
 		}
 
@@ -245,37 +230,11 @@ pub mod pallet {
 		/// Marking this method `transactional` so when an error is returned, we ensure no storage
 		/// is changed.
 		#[pallet::weight(0)]
-		pub fn buy_kitty(
-			origin: OriginFor<T>,
-			kitty_id: [u8; 16],
-			bid_price: BalanceOf<T>,
-		) -> DispatchResult {
+		pub fn buy_kitty(origin: OriginFor<T>, kitty_id: [u8; 16]) -> DispatchResult {
 			// Make sure the caller is from a signed origin
 			let buyer = ensure_signed(origin)?;
-
-			// Check the kitty exists and buyer is not the current kitty owner
-			let kitty = Kitties::<T>::get(&kitty_id).ok_or(Error::<T>::NonExistantKitty)?;
-			let seller = kitty.owner;
-			ensure!(seller != buyer, Error::<T>::BuyerIsKittyOwner);
-
-			// First check if the kitty is for sale
-			let current_price = kitty.price;
-			ensure!(current_price != None, Error::<T>::KittyNotForSale);
-			// Then ensure that the bid_price > asking price
-			ensure!(current_price <= Some(bid_price), Error::<T>::KittyBidPriceTooLow);
-
-			// Check the buyer has enough free balance
-			ensure!(T::Currency::free_balance(&buyer) >= bid_price, Error::<T>::NotEnoughBalance);
-
-			// Verify the recipient has the capacity to receive one more kitty
-			let to_owned = KittiesOwned::<T>::decode_len(&buyer).unwrap_or(0);
-			ensure!((to_owned as u32) < T::MaxKittyOwned::get(), Error::<T>::ExceedMaxKittyOwned);
-
 			// Transfer the kitty from seller to buyer as a sale.
-			Self::transfer_kitty_to(&kitty_id, &buyer, true)?;
-
-			// Deposit an event
-			Self::deposit_event(Event::Bought { buyer, seller, kitty: kitty_id, price: bid_price });
+			Self::do_transfer(kitty_id, buyer, true)?;
 
 			Ok(())
 		}
@@ -293,7 +252,7 @@ pub mod pallet {
 			let sender = ensure_signed(origin)?;
 
 			// Ensure the kitty exists and is called by the kitty owner
-			let mut kitty = Kitties::<T>::get(&kitty_id).ok_or(Error::<T>::NonExistantKitty)?;
+			let mut kitty = Kitties::<T>::get(&kitty_id).ok_or(Error::<T>::NonExistentKitty)?;
 			ensure!(kitty.owner == sender, Error::<T>::NotKittyOwner);
 
 			// Set the price in storage
@@ -369,7 +328,7 @@ pub mod pallet {
 			};
 
 			// Check if the kitty does not already exist in our storage map
-			ensure!(!Kitties::<T>::contains_key(&kitty.dna), Error::<T>::NonExistantKitty);
+			ensure!(!Kitties::<T>::contains_key(&kitty.dna), Error::<T>::NonExistentKitty);
 
 			// Performs this operation first as it may fail
 			let count = CountForKitties::<T>::get();
@@ -388,32 +347,43 @@ pub mod pallet {
 		}
 
 		// Update storage to transfer kitty
-		pub fn transfer_kitty_to(
-			kitty_id: &[u8; 16],
-			to: &T::AccountId,
+		pub fn do_transfer(
+			kitty_id: [u8; 16],
+			to: T::AccountId,
 			sale: bool,
 		) -> DispatchResult {
 			// Get the kitty
-			let mut kitty = Kitties::<T>::get(&kitty_id).ok_or(Error::<T>::NonExistantKitty)?;
-			let from = kitty.owner.clone();
+			let mut kitty = Kitties::<T>::get(&kitty_id).ok_or(Error::<T>::NonExistentKitty)?;
+			let from = kitty.owner;
+
+			ensure!(from != to, Error::<T>::TransferToSelf);
 			let mut from_owned = KittiesOwned::<T>::get(&from);
 
 			// Remove kitty from list of owned kitties.
-			if let Some(ind) = from_owned.iter().position(|&id| id == *kitty_id) {
+			if let Some(ind) = from_owned.iter().position(|&id| id == kitty_id) {
 				from_owned.swap_remove(ind);
 			} else {
-				return Err(Error::<T>::NonExistantKitty.into())
+				return Err(Error::<T>::NonExistentKitty.into())
 			}
 
 			// Add kitty to the list of owned kitties.
 			let mut to_owned = KittiesOwned::<T>::get(&to);
-			to_owned.try_push(*kitty_id).map_err(|()| Error::<T>::ExceedMaxKittyOwned)?;
+			to_owned.try_push(kitty_id).map_err(|()| Error::<T>::ExceedMaxKittyOwned)?;
 
 			// Mutating state here via a balance transfer, so nothing is allowed to fail after this.
 			if sale {
 				if let Some(price) = kitty.price {
 					// Transfer the amount from buyer to seller
 					T::Currency::transfer(&to, &from, price, ExistenceRequirement::KeepAlive)?;
+					// Deposit sold event
+					Self::deposit_event(Event::Sold {
+						seller: from.clone(),
+						buyer: to.clone(),
+						kitty: kitty_id,
+						price,
+					});
+				} else {
+					return Err(Error::<T>::KittyNotForSale.into())
 				}
 			}
 
@@ -422,9 +392,11 @@ pub mod pallet {
 			kitty.price = None;
 
 			// Write updates to storage
-			Kitties::<T>::insert(kitty_id, kitty);
-			KittiesOwned::<T>::insert(to, to_owned);
-			KittiesOwned::<T>::insert(from, from_owned);
+			Kitties::<T>::insert(&kitty_id, kitty);
+			KittiesOwned::<T>::insert(&to, to_owned);
+			KittiesOwned::<T>::insert(&from, from_owned);
+
+			Self::deposit_event(Event::Transferred { from, to, kitty: kitty_id });
 
 			Ok(())
 		}
