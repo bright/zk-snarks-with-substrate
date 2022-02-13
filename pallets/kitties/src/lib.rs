@@ -107,8 +107,6 @@ pub mod pallet {
 		Bought { buyer: T::AccountId, seller: T::AccountId, kitty: [u8; 16], price: BalanceOf<T> },
 	}
 
-	// Storage items
-
 	/// Keeps track of the number of kitties in existence.
 	#[pallet::storage]
 	#[pallet::getter(fn kitty_count)]
@@ -155,10 +153,6 @@ pub mod pallet {
 		}
 	}
 
-	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
-	// These functions materialize as "extrinsics", which are often compared to transactions.
-	// Dispatchable functions must be annotated with a weight and must return a DispatchResult.
-
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Create a new unique kitty.
@@ -195,14 +189,15 @@ pub mod pallet {
 			// Make sure the caller is from a signed origin
 			let sender = ensure_signed(origin)?;
 
-			// Check both parents are owned by the caller of this function
-			ensure!(Self::check_owner(&parent_1, &sender), Error::<T>::NotKittyOwner);
-			ensure!(Self::check_owner(&parent_2, &sender), Error::<T>::NotKittyOwner);
-
-			// Parents must be of opposite genders
+			// Get the kitties.
 			let maybe_mom = Self::kitties(&parent_1).ok_or(Error::<T>::NonExistantKitty)?;
 			let maybe_dad = Self::kitties(&parent_2).ok_or(Error::<T>::NonExistantKitty)?;
 
+			// Check both parents are owned by the caller of this function
+			ensure!(Self::check_owner(&maybe_mom, &sender), Error::<T>::NotKittyOwner);
+			ensure!(Self::check_owner(&maybe_dad, &sender), Error::<T>::NotKittyOwner);
+
+			// Parents must be of opposite genders
 			ensure!(maybe_mom.gender != maybe_dad.gender, Error::<T>::ThoseCatsCantBreed);
 
 			// Create new DNA from these parents
@@ -227,7 +222,8 @@ pub mod pallet {
 			let from = ensure_signed(origin)?;
 
 			// Ensure the kitty exists and is called by the kitty owner
-			ensure!(Self::check_owner(&kitty_id, &from), Error::<T>::NotKittyOwner);
+			let kitty = Self::kitties(&kitty_id).ok_or(Error::<T>::NonExistantKitty)?;
+			ensure!(Self::check_owner(&kitty, &from), Error::<T>::NotKittyOwner);
 
 			// Verify the kitty is not transferring back to its owner.
 			ensure!(from != to, Error::<T>::TransferToSelf);
@@ -303,10 +299,8 @@ pub mod pallet {
 			let sender = ensure_signed(origin)?;
 
 			// Ensure the kitty exists and is called by the kitty owner
-			ensure!(Self::check_owner(&kitty_id, &sender), Error::<T>::NotKittyOwner);
-
-			// Get the kitty
 			let mut kitty = Self::kitties(&kitty_id).ok_or(Error::<T>::NonExistantKitty)?;
+			ensure!(Self::check_owner(&kitty, &sender), Error::<T>::NotKittyOwner);
 
 			// Set the price in storage
 			kitty.price = new_price.clone();
@@ -400,11 +394,8 @@ pub mod pallet {
 		}
 
 		// Check whether kitty is owner by the breeder
-		pub fn check_owner(kitty_dna: &[u8; 16], breeder: &T::AccountId) -> bool {
-			match Self::kitties(kitty_dna) {
-				Some(kitty) => kitty.owner == *breeder,
-				None => false,
-			}
+		pub fn check_owner(kitty: &Kitty<T>, maybe_owner: &T::AccountId) -> bool {
+			kitty.owner == *maybe_owner
 		}
 
 		// Update storage to transfer kitty
