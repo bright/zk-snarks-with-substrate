@@ -333,7 +333,7 @@ pub mod pallet {
 			// Deposit our "Created" event.
 			Self::deposit_event(Event::Created { kitty: dna, owner: owner.clone() });
 
-			// Returns the DNA of the new kitty if this suceeds
+			// Returns the DNA of the new kitty if this succeeds
 			Ok(dna)
 		}
 
