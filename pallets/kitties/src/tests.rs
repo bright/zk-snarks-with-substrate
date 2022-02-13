@@ -3,6 +3,25 @@
 use crate::{mock::*, pallet::Error, *};
 use frame_support::{assert_noop, assert_ok};
 
+// This function checks that kitty ownership is set correctly in storage.
+// This will panic if things are not correct.
+fn assert_ownership(owner: u64, kitty_id: [u8; 16]) {
+	// For a kitty to be owned it should exist.
+	let kitty = Kitties::<Test>::get(kitty_id).unwrap();
+	// The kitty's owner is set correctly.
+	assert_eq!(kitty.owner, owner);
+
+	for (check_owner, owned) in KittiesOwned::<Test>::iter() {
+		if owner == check_owner {
+			// Owner should have this kitty.
+			assert!(owned.contains(&kitty_id));
+		} else {
+			// Everyone else should not.
+			assert!(!owned.contains(&kitty_id));
+		}
+	}
+}
+
 #[test]
 fn should_build_genesis_kitties() {
 	new_test_ext().execute_with(|| {
@@ -18,12 +37,10 @@ fn should_build_genesis_kitties() {
 
 		// Check that kitties are owned correctly
 		let kid1 = kitties_owned_by_1[0];
-		let kitty1 = Kitties::<Test>::get(kid1).unwrap();
-		assert_eq!(kitty1.owner, 1);
+		assert_ownership(1, kid1);
 
 		let kid2 = kitties_owned_by_2[0];
-		let kitty2 = Kitties::<Test>::get(kid2).unwrap();
-		assert_eq!(kitty2.owner, 2);
+		assert_ownership(2, kid2);
 	});
 }
 
@@ -37,14 +54,13 @@ fn create_kitty_should_work() {
 		assert_eq!(CountForKitties::<Test>::get(), 3);
 
 		// check that account #10 owns 1 kitty
-		assert_eq!(KittiesOwned::<Test>::get(10).len(), 1);
-
-		// check that some random account #5 does not own a kitty
-		assert_eq!(KittiesOwned::<Test>::get(5).len(), 0);
+		let kitties_owned = KittiesOwned::<Test>::get(10);
+		assert_eq!(kitties_owned.len(), 1);
+		let id = kitties_owned.last().unwrap();
+		assert_ownership(10, *id);
 
 		// check that this kitty is specifically owned by account #10
-		let hash = KittiesOwned::<Test>::get(10)[0];
-		let kitty = Kitties::<Test>::get(hash).unwrap();
+		let kitty = Kitties::<Test>::get(id).unwrap();
 		assert_eq!(kitty.owner, 10);
 		assert_eq!(kitty.price, None);
 	});
@@ -55,19 +71,16 @@ fn transfer_kitty_should_work() {
 	new_test_ext().execute_with(|| {
 		// check that account 10 own a kitty
 		assert_ok!(SubstrateKitties::create_kitty(Origin::signed(10)));
-		assert_eq!(KittiesOwned::<Test>::get(10).len(), 1);
-		let hash = KittiesOwned::<Test>::get(10)[0];
+		let id = KittiesOwned::<Test>::get(10)[0];
 
 		// account 10 send kitty to account 3
-		assert_ok!(SubstrateKitties::transfer(Origin::signed(10), 3, hash));
+		assert_ok!(SubstrateKitties::transfer(Origin::signed(10), 3, id));
 
 		// account 10 now has nothing
 		assert_eq!(KittiesOwned::<Test>::get(10).len(), 0);
 		// but account 3 does
 		assert_eq!(KittiesOwned::<Test>::get(3).len(), 1);
-		let new_hash = KittiesOwned::<Test>::get(3)[0];
-		// and it has the same hash
-		assert_eq!(hash, new_hash);
+		assert_ownership(3, id);
 	});
 }
 
@@ -83,3 +96,17 @@ fn transfer_non_owned_kitty_should_fail() {
 		);
 	});
 }
+
+// TODO: Check mint fails when kitty id already exists.
+
+// TODO: Check that create_kitty fails when user owns too many kitties.
+
+// TODO: Check that multiple create_kitty calls work in a single block.
+
+// TODO: Check that breed kitty works as expected.
+
+// TODO: Check breed kitty checks the same owner.
+
+// TODO: Check that breed kitty checks opposite gender.
+
+// TODO:
