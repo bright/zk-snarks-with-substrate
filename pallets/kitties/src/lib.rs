@@ -2,12 +2,10 @@
 
 #[cfg(test)]
 pub mod mock;
+
 #[cfg(test)]
 mod tests;
 
-/// Edit this file to define custom logic or remove it if it is not needed.
-/// Learn more about FRAME and the core library of Substrate FRAME pallets:
-/// <https://substrate.io/docs/en/knowledgebase/runtime/frame>
 pub use pallet::*;
 
 #[frame_support::pallet]
@@ -386,7 +384,7 @@ pub mod pallet {
 			};
 
 			// Check if the kitty does not already exist in our storage map
-			ensure!(Kitties::<T>::contains_key(&kitty.dna), Error::<T>::NonExistantKitty);
+			ensure!(!Kitties::<T>::contains_key(&kitty.dna), Error::<T>::NonExistantKitty);
 
 			// Performs this operation first as it may fail
 			let new_count =
