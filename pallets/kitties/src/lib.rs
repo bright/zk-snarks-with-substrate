@@ -139,7 +139,7 @@ pub mod pallet {
 			// When building a kitty from genesis config, we require the DNA and Gender to be
 			// supplied
 			for (account, dna, gender) in &self.kitties {
-				let _ = Pallet::<T>::mint(account, dna.clone(), gender.clone());
+				assert!(Pallet::<T>::mint(account, dna.clone(), gender.clone()).is_ok());
 			}
 		}
 	}
