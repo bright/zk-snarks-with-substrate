@@ -79,7 +79,7 @@ fn transfer_non_owned_kitty_should_fail() {
 		// account 0 cannot transfer a kitty with this hash.
 		assert_noop!(
 			SubstrateKitties::transfer(Origin::signed(9), 2, hash),
-			Error::<Test>::NotKittyOwner
+			Error::<Test>::NotOwner
 		);
 	});
 }

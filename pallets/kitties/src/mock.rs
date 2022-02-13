@@ -76,14 +76,14 @@ impl pallet_balances::Config for Test {
 
 parameter_types! {
 	// One can owned at most 9,999 Kitties
-	pub const MaxKittyOwned: u32 = 9999;
+	pub const MaxKittiesOwned: u32 = 9999;
 }
 
 impl pallet_kitties::Config for Test {
 	type Event = Event;
 	type Currency = Balances;
 	type KittyRandomness = RandomnessCollectiveFlip;
-	type MaxKittyOwned = MaxKittyOwned;
+	type MaxKittiesOwned = MaxKittiesOwned;
 }
 
 impl pallet_randomness_collective_flip::Config for Test {}
