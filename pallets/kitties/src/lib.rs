@@ -21,9 +21,6 @@ pub mod pallet {
 	#[cfg(feature = "std")]
 	use frame_support::serde::{Deserialize, Serialize};
 
-	// Handles our pallet's abstraction over accounts
-	type AccountOf<T> = <T as frame_system::Config>::AccountId;
-
 	// Handles our pallet's currency abstraction
 	type BalanceOf<T> =
 		<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -37,7 +34,7 @@ pub mod pallet {
 		// `None` assumes not for sale
 		pub price: Option<BalanceOf<T>>,
 		pub gender: Gender,
-		pub owner: AccountOf<T>,
+		pub owner: T::AccountId,
 	}
 
 	// Set Gender type in kitty struct
@@ -100,14 +97,14 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// A new kitty was sucessfully created. \[sender, kitty_dna\]
-		Created(T::AccountId, [u8; 16]),
-		/// kitty price was sucessfully set. \[sender, kitty_id, new_price\]
-		PriceSet(T::AccountId, [u8; 16], Option<BalanceOf<T>>),
-		/// A kitty was sucessfully transferred. \[from, to, kitty_id\]
-		Transferred(T::AccountId, T::AccountId, [u8; 16]),
-		/// A kitty was sucessfully bought. \[buyer, seller, kitty_id, bid_price\]
-		Bought(T::AccountId, T::AccountId, [u8; 16], BalanceOf<T>),
+		/// A new kitty was successfully created.
+		Created { kitty: [u8; 16], owner: T::AccountId },
+		/// The price of a kitty was successfully set.
+		PriceSet { kitty: [u8; 16], price: Option<BalanceOf<T>> },
+		/// A kitty was successfully transferred.
+		Transferred { from: T::AccountId, to: T::AccountId, kitty: [u8; 16] },
+		/// A kitty was successfully bought.
+		Bought { buyer: T::AccountId, seller: T::AccountId, kitty: [u8; 16], price: BalanceOf<T> },
 	}
 
 	// Storage items
@@ -182,7 +179,7 @@ pub mod pallet {
 			log::info!("🎈😺 A kitty is born with ID ➡ {:?}.", kitty_dna);
 
 			// Deposit our "Created" event.
-			Self::deposit_event(Event::Created(sender, kitty_dna));
+			Self::deposit_event(Event::Created { kitty: kitty_dna, owner: sender });
 			Ok(())
 		}
 
@@ -243,7 +240,7 @@ pub mod pallet {
 			Self::transfer_kitty_to(&kitty_id, &to)?;
 
 			// Deposit an event
-			Self::deposit_event(Event::Transferred(from, to, kitty_id));
+			Self::deposit_event(Event::Transferred { from, to, kitty: kitty_id });
 
 			Ok(())
 		}
@@ -288,7 +285,7 @@ pub mod pallet {
 			Self::transfer_kitty_to(&kitty_id, &buyer)?;
 
 			// Deposit an event
-			Self::deposit_event(Event::Bought(buyer, seller, kitty_id, bid_price));
+			Self::deposit_event(Event::Bought { buyer, seller, kitty: kitty_id, price: bid_price });
 
 			Ok(())
 		}
@@ -316,7 +313,7 @@ pub mod pallet {
 			Kitties::<T>::insert(&kitty_id, kitty);
 
 			// Deposit a "PriceSet" event.
-			Self::deposit_event(Event::PriceSet(sender, kitty_id, new_price));
+			Self::deposit_event(Event::PriceSet { kitty: kitty_id, price: new_price });
 
 			Ok(())
 		}
