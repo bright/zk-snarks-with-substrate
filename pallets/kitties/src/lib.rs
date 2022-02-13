@@ -1,5 +1,10 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+#[cfg(test)]
+pub mod mock;
+#[cfg(test)]
+mod tests;
+
 /// Edit this file to define custom logic or remove it if it is not needed.
 /// Learn more about FRAME and the core library of Substrate FRAME pallets:
 /// <https://substrate.io/docs/en/knowledgebase/runtime/frame>
@@ -16,10 +21,10 @@ pub mod pallet {
 	#[cfg(feature = "std")]
 	use frame_support::serde::{Deserialize, Serialize};
 
-	// A way to handle the owner accounts
+	// Handles our pallet's abstraction over accounts
 	type AccountOf<T> = <T as frame_system::Config>::AccountId;
 
-	// A way to handle currency for our pallet
+	// Handles our pallet's currency abstraction
 	type BalanceOf<T> =
 		<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
@@ -86,6 +91,8 @@ pub mod pallet {
 		KittyBidPriceTooLow,
 		/// Ensures that an account has enough funds to purchase a kitty.
 		NotEnoughBalance,
+		/// Owner can't use two kitties of the same genfer to breed.
+		ThoseCatsCantBreed,
 	}
 
 	// Events
@@ -191,10 +198,16 @@ pub mod pallet {
 			// Make sure the caller is from a signed origin
 			let sender = ensure_signed(origin)?;
 
-			// Check both parents are owner by the caller of this function
+			// Check both parents are owned by the caller of this function
 			ensure!(Self::check_owner(&parent_1, &sender), Error::<T>::NotKittyOwner);
 			ensure!(Self::check_owner(&parent_2, &sender), Error::<T>::NotKittyOwner);
 
+			// Parents must be of opposite genders
+			let maybe_mom = Self::kitties(&parent_1).ok_or(Error::<T>::NonExistantKitty)?;
+			let maybe_dad = Self::kitties(&parent_2).ok_or(Error::<T>::NonExistantKitty)?;
+			
+			ensure!(maybe_mom.gender != maybe_dad.gender, Error::<T>::ThoseCatsCantBreed);
+			
 			// Create new DNA from these parents
 			let (new_dna, new_gender) = Self::breed_dna(&parent_1, &parent_2);
 
@@ -414,6 +427,10 @@ pub mod pallet {
 				Err(())
 			})
 			.map_err(|_| Error::<T>::NonExistantKitty)?;
+			
+			// Verify (again!) that the recipient has the capacity to receive one more kitty
+			let to_owned = KittiesOwned::<T>::decode_len(&to).unwrap_or(0);
+	        ensure!((to_owned as u32) < T::MaxKittyOwned::get(), Error::<T>::ExceedMaxKittyOwned);
 
 			// Update the kitty owner and reset the price to `None`
 			kitty.owner = to.clone();
