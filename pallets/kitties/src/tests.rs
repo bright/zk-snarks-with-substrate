@@ -7,7 +7,7 @@ use frame_support::{assert_noop, assert_ok};
 fn should_build_genesis_kitties() {
 	new_test_ext().execute_with(|| {
 		// Check we have 2 kitties, as specified
-		assert_eq!(SubstrateKitties::kitty_cnt(), 2);
+		assert_eq!(SubstrateKitties::kitty_count(), 2);
 
 		// Check owners own the correct amount of kitties
 		let kitties_owned_by_1 = SubstrateKitties::kitties_owned(1);
@@ -36,7 +36,7 @@ fn create_kitty_should_work() {
 		assert_ok!(SubstrateKitties::create_kitty(Origin::signed(10)));
 
 		// check that 3 kitties exists (together with the two from genesis)
-		assert_eq!(SubstrateKitties::kitty_cnt(), 3);
+		assert_eq!(SubstrateKitties::kitty_count(), 3);
 
 		// check that account #10 owns 1 kitty
 		assert_eq!(SubstrateKitties::kitties_owned(10).len(), 1);
