@@ -19,12 +19,12 @@ fn should_build_genesis_kitties() {
 		// Check that kitties are owned correctly
 		let kid1 = kitties_owned_by_1[0];
 		let kitty1 =
-			SubstrateKitties::kitties(kid1).expect("Could have this kitty ID owned by acct 1");
+			SubstrateKitties::kitties(kid1).expect("Could have this kitty ID owned by account 1");
 		assert_eq!(kitty1.owner, 1);
 
 		let kid2 = kitties_owned_by_2[0];
 		let kitty2 =
-			SubstrateKitties::kitties(kid2).expect("Could have this kitty ID owned by acct 2");
+			SubstrateKitties::kitties(kid2).expect("Could have this kitty ID owned by account 2");
 		assert_eq!(kitty2.owner, 2);
 	});
 }
@@ -55,17 +55,17 @@ fn create_kitty_should_work() {
 #[test]
 fn transfer_kitty_should_work() {
 	new_test_ext().execute_with(|| {
-		// check that acct 10 own a kitty
+		// check that account 10 own a kitty
 		assert_ok!(SubstrateKitties::create_kitty(Origin::signed(10)));
 		assert_eq!(SubstrateKitties::kitties_owned(10).len(), 1);
 		let hash = SubstrateKitties::kitties_owned(10)[0];
 
-		// acct 10 send kitty to acct 3
+		// account 10 send kitty to account 3
 		assert_ok!(SubstrateKitties::transfer(Origin::signed(10), 3, hash));
 
-		// acct 10 now has nothing
+		// account 10 now has nothing
 		assert_eq!(SubstrateKitties::kitties_owned(10).len(), 0);
-		// but acct 3 does
+		// but account 3 does
 		assert_eq!(SubstrateKitties::kitties_owned(3).len(), 1);
 		let new_hash = SubstrateKitties::kitties_owned(3)[0];
 		// and it has the same hash

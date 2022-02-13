@@ -119,7 +119,7 @@ pub mod pallet {
 	#[pallet::getter(fn kitties)]
 	pub(super) type Kitties<T: Config> = StorageMap<_, Twox64Concat, [u8; 16], Kitty<T>>;
 
-	/// Track kitties owned by account.
+	/// Track the kitties owned by each account.
 	#[pallet::storage]
 	#[pallet::getter(fn kitties_owned)]
 	pub(super) type KittiesOwned<T: Config> = StorageMap<
@@ -149,8 +149,8 @@ pub mod pallet {
 		fn build(&self) {
 			// When building a kitty from genesis config, we require the DNA and Gender to be
 			// supplied
-			for (acct, dna, gender) in &self.kitties {
-				let _ = Pallet::<T>::mint(acct, dna.clone(), gender.clone());
+			for (account, dna, gender) in &self.kitties {
+				let _ = Pallet::<T>::mint(account, dna.clone(), gender.clone());
 			}
 		}
 	}
