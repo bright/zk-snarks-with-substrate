@@ -39,7 +39,7 @@ pub mod pallet {
 	}
 
 	// Set Gender type in kitty struct
-	#[derive(Clone, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+	#[derive(Clone, Encode, Decode, PartialEq, Copy, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 	// We need this to pass kitty info for genesis configuration
 	#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 	pub enum Gender {
@@ -139,7 +139,7 @@ pub mod pallet {
 			// When building a kitty from genesis config, we require the DNA and Gender to be
 			// supplied
 			for (account, dna, gender) in &self.kitties {
-				assert!(Pallet::<T>::mint(account, dna.clone(), gender.clone()).is_ok());
+				assert!(Pallet::<T>::mint(account, *dna, *gender).is_ok());
 			}
 		}
 	}
@@ -251,7 +251,7 @@ pub mod pallet {
 			ensure!(kitty.owner == sender, Error::<T>::NotOwner);
 
 			// Set the price in storage
-			kitty.price = new_price.clone();
+			kitty.price = new_price;
 			Kitties::<T>::insert(&kitty_id, kitty);
 
 			// Deposit a "PriceSet" event.
@@ -283,9 +283,9 @@ pub mod pallet {
 
 			// Generate Gender
 			if hash[0] % 2 == 0 {
-				return (hash, Gender::Male)
+				(hash, Gender::Male)
 			} else {
-				return (hash, Gender::Female)
+				(hash, Gender::Female)
 			}
 		}
 
@@ -305,7 +305,7 @@ pub mod pallet {
 			for i in 0..new_dna.len() {
 				new_dna[i] = Self::mutate_dna_fragment(parent1[i], parent2[1], new_dna[i])
 			}
-			return (new_dna, new_gender)
+			(new_dna, new_gender)
 		}
 
 		// Helper to mint a kitty
@@ -315,12 +315,7 @@ pub mod pallet {
 			gender: Gender,
 		) -> Result<[u8; 16], DispatchError> {
 			// Create a new object
-			let kitty = Kitty::<T> {
-				dna: dna.clone(),
-				price: None,
-				gender: gender.clone(),
-				owner: owner.clone(),
-			};
+			let kitty = Kitty::<T> { dna, price: None, gender, owner: owner.clone() };
 
 			// Check if the kitty does not already exist in our storage map
 			ensure!(!Kitties::<T>::contains_key(&kitty.dna), Error::<T>::NoKitty);
