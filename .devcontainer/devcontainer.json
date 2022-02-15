@@ -14,7 +14,7 @@
     3000,
     9944
   ],
-  "preCreateCommand": ["cargo build", "cargo check", "cd substrate-front-end-template && yarn"],
+  "onCreateCommand": ["cargo build", "cargo check", "cd substrate-front-end-template && yarn"],
   "postStartCommand": ["./target/debug/node-template --dev --ws-external", "cd substrate-front-end-template && yarn start"],
   "menuActions": [
     {"id": "polkadotjs",
