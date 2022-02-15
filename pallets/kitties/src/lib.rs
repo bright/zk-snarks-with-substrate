@@ -75,6 +75,8 @@ pub mod pallet {
 		TooManyOwned,
 		/// Trying to transfer or buy a kitty from oneself.
 		TransferToSelf,
+		/// This kitty already exists!
+		DuplicateKitty,
 		/// This kitty does not exist!
 		NoKitty,
 		/// You are not the owner of this kitty.
@@ -316,7 +318,7 @@ pub mod pallet {
 			let kitty = Kitty::<T> { dna, price: None, gender, owner: owner.clone() };
 
 			// Check if the kitty does not already exist in our storage map
-			ensure!(!Kitties::<T>::contains_key(&kitty.dna), Error::<T>::NoKitty);
+			ensure!(!Kitties::<T>::contains_key(&kitty.dna), Error::<T>::DuplicateKitty);
 
 			// Performs this operation first as it may fail
 			let count = CountForKitties::<T>::get();
