@@ -15,7 +15,6 @@
     9944
   ],
   "onCreateCommand": ["cargo build", "cargo check", "cd substrate-front-end-template && yarn"],
-  "postStartCommand": ["./target/debug/node-template --dev --ws-external", "cd substrate-front-end-template && yarn start"],
   "menuActions": [
     {"id": "polkadotjs",
      "label": "Open PolkadotJS Apps",
