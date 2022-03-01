@@ -51,7 +51,7 @@ pub mod pallet {
 		Blake2_128Concat,
 		BoundedVec<u8, T::MaxBytesInHash>,
 		(T::AccountId, T::BlockNumber),
-		ValueQuery,
+		OptionQuery,
 	>;
 
 	#[pallet::hooks]
@@ -101,7 +101,8 @@ pub mod pallet {
 			ensure!(Proofs::<T>::contains_key(&proof), Error::<T>::NoSuchProof);
 
 			// Get owner of the claim.
-			let (owner, _) = Proofs::<T>::get(&proof);
+			// Panic condition: there is no way to set a `None` owner, so this must always unwrap.
+			let (owner, _) = Proofs::<T>::get(&proof).expect("All proofs must have an owner!");
 
 			// Verify that sender of the current call is the claim owner.
 			ensure!(sender == owner, Error::<T>::NotProofOwner);

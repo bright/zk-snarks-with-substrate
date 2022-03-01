@@ -269,6 +269,7 @@ impl pallet_sudo::Config for Runtime {
 /// Configure the pallet-template in pallets/template.
 impl pallet_template::Config for Runtime {
 	type Event = Event;
+	type MaxBytesInHash = frame_support::traits::ConstU32<60>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
