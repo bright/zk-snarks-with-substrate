@@ -88,15 +88,15 @@ impl pallet_kitties::Config for Test {
 
 impl pallet_randomness_collective_flip::Config for Test {}
 
-pub(crate) fn new_test_ext() -> sp_io::TestExternalities {
+pub(crate) fn new_test_ext(users: Vec<(u64, [u8; 16], Gender)>) -> sp_io::TestExternalities {
 	let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
 	GenesisConfig {
-		balances: BalancesConfig { balances: vec![(1, 10), (2, 10)] },
+		//
+		balances: BalancesConfig {
+			balances: users.iter().map(|(user, _, _)| (*user, 10)).collect(),
+		},
 		substrate_kitties: SubstrateKittiesConfig {
-			kitties: vec![
-				(1, *b"1234567890123456", Gender::Female),
-				(2, *b"123456789012345a", Gender::Male),
-			],
+			kitties: users.iter().map(|(user, kitty, gender)| (*user, *kitty, *gender)).collect(),
 		},
 		..Default::default()
 	}
