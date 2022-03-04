@@ -290,8 +290,8 @@ pub mod pallet {
 		}
 
 		// Picks from existing DNA
-		fn mutate_dna_fragment(dna_fragment1: u8, dna_fragment2: u8, new_dna_fragment: u8) -> u8 {
-			if new_dna_fragment % 2 == 0 {
+		fn mutate_dna_fragment(dna_fragment1: u8, dna_fragment2: u8, random_value: u8) -> u8 {
+			if random_value % 2 == 0 {
 				dna_fragment1
 			} else {
 				dna_fragment2
@@ -303,7 +303,9 @@ pub mod pallet {
 			let (mut new_dna, new_gender) = Self::gen_dna();
 
 			for i in 0..new_dna.len() {
-				new_dna[i] = Self::mutate_dna_fragment(parent1[i], parent2[1], new_dna[i])
+				// At this point, `new_dna` is a randomly generated set of bytes, so we can
+				// extract each of its bytes to act as a random value.
+				new_dna[i] = Self::mutate_dna_fragment(parent1[i], parent2[i], new_dna[i])
 			}
 			(new_dna, new_gender)
 		}

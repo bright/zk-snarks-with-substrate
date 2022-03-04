@@ -173,6 +173,8 @@ fn cant_exceed_max_kitties() {
 		// create `MaxKittiesOwned` kitties with account #10
 		for _i in 0..<Test as Config>::MaxKittiesOwned::get() {
 			assert_ok!(SubstrateKitties::create_kitty(Origin::signed(10)));
+			// We do this because the hash of the kitty depends on this for seed,
+			// so changing this allows you to have a different kitty id
 			System::set_block_number(System::block_number() + 1);
 		}
 
@@ -248,6 +250,10 @@ fn dna_helpers_should_work() {
 
 		// Ensure that dna is unique
 		assert!(dna_1 != dna);
+
+		for &i in dna.iter() {
+			assert!(i == 1u8 || i == 2u8)
+		}
 
 		// calling mint with this new dna should work
 		assert_ok!(SubstrateKitties::mint(&3, dna, gender));
