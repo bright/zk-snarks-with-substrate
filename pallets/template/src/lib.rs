@@ -9,6 +9,11 @@ pub mod pallet {
 	use frame_support::{pallet_prelude::*, storage::bounded_vec::BoundedVec};
 	use frame_system::pallet_prelude::*;
 
+	// Define the pallet struct placeholder, various pallet function are implemented on it.
+	#[pallet::pallet]
+	#[pallet::generate_store(pub(super) trait Store)]
+	pub struct Pallet<T>(_);
+
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -40,10 +45,6 @@ pub mod pallet {
 		NotProofOwner,
 	}
 
-	#[pallet::pallet]
-	#[pallet::generate_store(pub(super) trait Store)]
-	pub struct Pallet<T>(_);
-
 	#[pallet::storage]
 	/// Maps each proof to its owner and block number when the proof was made
 	pub(super) type Proofs<T: Config> = StorageMap<
@@ -53,9 +54,6 @@ pub mod pallet {
 		(T::AccountId, T::BlockNumber),
 		OptionQuery,
 	>;
-
-	#[pallet::hooks]
-	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
 
 	// Dispatchable functions allow users to interact with the pallet and invoke state changes.
 	// These functions materialize as "extrinsics", which are often compared to transactions.
