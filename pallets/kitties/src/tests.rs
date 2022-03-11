@@ -132,7 +132,23 @@ fn mint_should_fail() {
 	});
 }
 
-// Check that multiple create_kitty calls work in a single block.
+
+#[test]
+fn multiple_kitties_in_one_block() {
+	// Check that multiple create_kitty calls work in a single block.
+	new_test_ext(vec![
+		(1, *b"1234567890123456", Gender::Female),
+		(2, *b"123456789012345a", Gender::Male),
+	]).execute_with(|| {
+
+		// create a kitty with account #10
+		assert_ok!(SubstrateKitties::create_kitty(Origin::signed(10)));
+		frame_system::Pallet::<Test>::set_extrinsic_index(1);
+
+		// create a kitty with account #10
+		assert_ok!(SubstrateKitties::create_kitty(Origin::signed(10)));
+	});
+}
 
 #[test]
 fn breed_kitty_works() {
@@ -154,6 +170,8 @@ fn breed_kitty_works() {
 		// Breeder can only breed kitties they own
 		assert_ok!(SubstrateKitties::breed_kitty(Origin::signed(1), mom, dad));
 
+		// Check the hash is from the mom and dad
+		// If mom was 0 and 2 it should e that
 		// Kitty cant breed with itself
 		assert_noop!(
 			SubstrateKitties::breed_kitty(Origin::signed(1), mom, mom),
@@ -251,8 +269,8 @@ fn dna_helpers_should_work() {
 		// Ensure that dna is unique
 		assert!(dna_1 != dna);
 
-		for &i in dna.iter() {
-			assert!(i == 1u8 || i == 2u8)
+		for i in dna.iter() {
+			assert!(i == &1u8 || i == &2u8)
 		}
 
 		// calling mint with this new dna should work
@@ -335,6 +353,9 @@ fn buy_kitty_works() {
 
 		// Account #1 can buy account #2's kitty
 		assert_ok!(SubstrateKitties::buy_kitty(Origin::signed(1), id, set_price));
+
+		// Add the fact the price transfer worked
+
 
 		// Kitty is not for sale
 		assert_noop!(
