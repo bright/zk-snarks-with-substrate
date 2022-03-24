@@ -214,22 +214,23 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Buy a saleable kitty. The bid price provided from the buyer has to be equal or higher
-		/// than the ask price from the seller.
+		/// Buy a kitty for sale. The `limit_price` parameter is set as a safeguard against the 
+		/// possibility that the seller front-runs the transaction by setting a high price. A front-end
+		/// should assume that this value is always equal to the actual price of the kitty. The buyer 
+		/// will always be charged the actual price of the kitty.
 		///
-		/// This will reset the asking price of the kitty, marking it not for sale.
-		/// Marking this method `transactional` so when an error is returned, we ensure no storage
-		/// is changed.
+		/// If successful, this dispatchable will reset the price of the kitty to `None`, making 
+		/// it no longer for sale and handle the balance and kitty transfer between the buyer and seller.
 		#[pallet::weight(0)]
 		pub fn buy_kitty(
 			origin: OriginFor<T>,
 			kitty_id: [u8; 16],
-			bid_price: BalanceOf<T>,
+			limit_price: BalanceOf<T>,
 		) -> DispatchResult {
 			// Make sure the caller is from a signed origin
 			let buyer = ensure_signed(origin)?;
-			// Transfer the kitty from seller to buyer as a sale.
-			Self::do_transfer(kitty_id, buyer, Some(bid_price))?;
+			// Transfer the kitty from seller to buyer as a sale
+			Self::do_transfer(kitty_id, buyer, Some(limit_price))?;
 
 			Ok(())
 		}
@@ -265,7 +266,7 @@ pub mod pallet {
 
 	impl<T: Config> Pallet<T> {
 		// Generates and returns DNA and Gender
-		fn gen_dna() -> ([u8; 16], Gender) {
+		pub fn gen_dna() -> ([u8; 16], Gender) {
 			// Create randomness
 			let random = T::KittyRandomness::random(&b"dna"[..]).0;
 
@@ -283,30 +284,39 @@ pub mod pallet {
 
 			// Generate Gender
 			if hash[0] % 2 == 0 {
+				// Males are identified by having a even leading byte
 				(hash, Gender::Male)
 			} else {
+				// Females are identified by having a odd leading byte
 				(hash, Gender::Female)
 			}
 		}
 
 		// Picks from existing DNA
 		fn mutate_dna_fragment(dna_fragment1: u8, dna_fragment2: u8, random_value: u8) -> u8 {
+			// Given some random u8
 			if random_value % 2 == 0 {
+				// either return `dna_fragment1` if its an even value
 				dna_fragment1
 			} else {
+				// or return `dna_fragment2` if its an odd value
 				dna_fragment2
 			}
 		}
 
 		// Generates a new kitty using existing kitties
 		pub fn breed_dna(parent1: &[u8; 16], parent2: &[u8; 16]) -> ([u8; 16], Gender) {
+			// Call `gen_dna` to generate random kitty DNA
+			// We don't know what Gender this kitty is yet
 			let (mut new_dna, new_gender) = Self::gen_dna();
 
+			// randomly combine DNA using `mutate_dna_fragment`
 			for i in 0..new_dna.len() {
 				// At this point, `new_dna` is a randomly generated set of bytes, so we can
-				// extract each of its bytes to act as a random value.
+				// extract each of its bytes to act as a random value for `mutate_dna_fragment`
 				new_dna[i] = Self::mutate_dna_fragment(parent1[i], parent2[i], new_dna[i])
 			}
+			// return new DNA and gender
 			(new_dna, new_gender)
 		}
 
@@ -345,7 +355,7 @@ pub mod pallet {
 		pub fn do_transfer(
 			kitty_id: [u8; 16],
 			to: T::AccountId,
-			maybe_bid_price: Option<BalanceOf<T>>,
+			maybe_limit_price: Option<BalanceOf<T>>,
 		) -> DispatchResult {
 			// Get the kitty
 			let mut kitty = Kitties::<T>::get(&kitty_id).ok_or(Error::<T>::NoKitty)?;
@@ -358,7 +368,7 @@ pub mod pallet {
 			if let Some(ind) = from_owned.iter().position(|&id| id == kitty_id) {
 				from_owned.swap_remove(ind);
 			} else {
-				return Err(Error::<T>::NoKitty.into())
+				return Err(Error::<T>::NoKitty.into());
 			}
 
 			// Add kitty to the list of owned kitties.
@@ -366,9 +376,12 @@ pub mod pallet {
 			to_owned.try_push(kitty_id).map_err(|()| Error::<T>::TooManyOwned)?;
 
 			// Mutating state here via a balance transfer, so nothing is allowed to fail after this.
-			if let Some(bid_price) = maybe_bid_price {
+			// The buyer will always be charged the actual price. The limit_price parameter is just a 
+			// protection so the seller isn't able to front-run the transaction.
+			if let Some(limit_price) = maybe_limit_price {
+				// Current kitty price if for sale
 				if let Some(price) = kitty.price {
-					ensure!(bid_price >= price, Error::<T>::BidPriceTooLow);
+					ensure!(limit_price >= price, Error::<T>::BidPriceTooLow);
 					// Transfer the amount from buyer to seller
 					T::Currency::transfer(&to, &from, price, ExistenceRequirement::KeepAlive)?;
 					// Deposit sold event
@@ -379,7 +392,8 @@ pub mod pallet {
 						price,
 					});
 				} else {
-					return Err(Error::<T>::NotForSale.into())
+					// Kitty price is set to `None` and is not for sale
+					return Err(Error::<T>::NotForSale.into());
 				}
 			}
 
