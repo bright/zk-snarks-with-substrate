@@ -24,7 +24,7 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// Event emitted when a proof has been claimed.
+		/// Event emitted when a claim has been created.
 		ClaimCreated { who: T::AccountId, claim: T::Hash },
 		/// Event emitted when a claim is revoked by the owner.
 		ClaimRevoked { who: T::AccountId, claim: T::Hash },
