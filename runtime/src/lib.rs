@@ -299,7 +299,7 @@ construct_runtime!(
 		// Include the custom logic from the pallet-template in the runtime.
 		TemplateModule: pallet_template,
 		#[cfg(feature = "oohwee")]
-		OohWee: pallet_oohwee::{Event<T>},
+		OohWee: pallet_oohwee,
 	}
 );
 
