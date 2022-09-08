@@ -138,7 +138,7 @@ parameter_types! {
 	pub const Version: RuntimeVersion = VERSION;
 	/// We allow for 2 seconds of compute with a 6 second average block time.
 	pub BlockWeights: frame_system::limits::BlockWeights = frame_system::limits::BlockWeights
-		::with_sensible_defaults(2 * WEIGHT_PER_SECOND, NORMAL_DISPATCH_RATIO);
+		::with_sensible_defaults(WEIGHT_PER_SECOND.saturating_mul(2), NORMAL_DISPATCH_RATIO);
 	pub BlockLength: frame_system::limits::BlockLength = frame_system::limits::BlockLength
 		::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
 	pub const SS58Prefix: u8 = 42;
@@ -270,9 +270,12 @@ impl pallet_template::Config for Runtime {
 	type Event = Event;
 }
 
+impl pallet_oohwee::Config for Runtime {
+	type Event = Event;
+}
 
 parameter_types! {
-	pub CouncilMotionDuration: BlockNumber = prod_or_fast!(3 * DAYS, 2 * MINUTES, "KSM_MOTION_DURATION");
+	pub CouncilMotionDuration: BlockNumber =  2 * MINUTES;
 	pub const CouncilMaxProposals: u32 = 100;
 	pub const CouncilMaxMembers: u32 = 100;
 }
@@ -295,6 +298,8 @@ construct_runtime!(
 		Sudo: pallet_sudo,
 		// Include the custom logic from the pallet-template in the runtime.
 		TemplateModule: pallet_template,
+		#[cfg(feature = "oohwee")]
+		OohWee: pallet_oohwee::{Event<T>},
 	}
 );
 
