@@ -2,6 +2,7 @@
 members = [
     "node",
     "pallets/template",
+    "pallets/zk-snarks",
     "runtime",
 ]
 [profile.release]
