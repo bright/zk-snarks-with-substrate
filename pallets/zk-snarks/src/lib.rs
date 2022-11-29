@@ -43,6 +43,8 @@ pub use weights::*;
 pub mod verifier;
 pub use verifier::*;
 
+pub mod new_verifier;
+
 use frame_support::storage::bounded_vec::BoundedVec;
 pub use pallet::*;
 
@@ -137,8 +139,11 @@ pub mod pallet {
 
 		/// Verify a proof.
 		#[pallet::weight(<T as Config>::WeightInfo::verify_benchmark(vec_proof.len()))]
-		pub fn verify(_origin: OriginFor<T>, vec_proof: Vec<u8>) -> DispatchResult {            
+		pub fn verify(_origin: OriginFor<T>, vec_proof: Vec<u8>) -> DispatchResult {
             ensure!(!vec_proof.is_empty(), Error::<T>::ProofIsEmpty);
+
+
+			new_verifier::verify(None, None, None).unwrap();
 
             let proof: ProofDef<T> = vec_proof.try_into().map_err(|_| Error::<T>::TooLongProof)?;
             ProofStorage::<T>::put(proof.clone());
