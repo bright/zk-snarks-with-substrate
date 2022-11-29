@@ -1,37 +1,40 @@
-use sp_std::ops::{AddAssign, Neg};
-use bls12_381::{Bls12, G1Affine, G2Affine, G2Prepared, Scalar};
-use group::Curve;
-use group::prime::PrimeCurveAffine;
-use pairing::{Engine, MultiMillerLoop};
 use crate::new_verifier::VerificationError::InvalidVerificationKey;
-use sp_std::prelude::*;
-
+use bls12_381::{Bls12, G1Affine, G2Affine, G2Prepared, Scalar};
+use group::{prime::PrimeCurveAffine, Curve};
+use pairing::{Engine, MultiMillerLoop};
+use sp_std::{
+	ops::{AddAssign, Neg},
+	prelude::*,
+};
 
 pub struct VerificationKey {
 	pub alpha: G1Affine,
 	pub beta: G2Affine,
 	pub gamma: G2Affine,
 	pub delta: G2Affine,
-	pub ic: Vec<G1Affine>
+	pub ic: Vec<G1Affine>,
 }
 
 pub struct Proof {
 	pub a: G1Affine,
 	pub b: G2Affine,
-	pub c: G1Affine
+	pub c: G1Affine,
 }
 
 #[derive(Debug)]
 pub enum VerificationError {
-	InvalidVerificationKey
+	InvalidVerificationKey,
 }
 
 pub type VerificationResult = Result<bool, VerificationError>;
 
 pub type PublicInputs = Vec<Scalar>;
 
-pub fn verify(vk: Option<VerificationKey>, proof: Option<Proof>, inputs: Option<PublicInputs>) -> VerificationResult {
-
+pub fn verify(
+	vk: Option<VerificationKey>,
+	proof: Option<Proof>,
+	inputs: Option<PublicInputs>,
+) -> VerificationResult {
 	if vk.is_none() || proof.is_none() || inputs.is_none() {
 		return Ok(true)
 	}
@@ -55,17 +58,14 @@ pub fn verify(vk: Option<VerificationKey>, proof: Option<Proof>, inputs: Option<
 		(&acc.to_affine(), &vk.gamma.neg().into()),
 		(&proof.c, &vk.delta.neg().into()),
 	])
-		.final_exponentiation();
+	.final_exponentiation();
 
 	let terms = &[(&vk.alpha, &G2Prepared::from(vk.beta))];
 	let alpha_beta = Bls12::multi_miller_loop(terms);
 
-	if alpha_beta.final_exponentiation()
-		== final_result
-	{
+	if alpha_beta.final_exponentiation() == final_result {
 		Ok(true)
 	} else {
 		Ok(false)
 	}
-
 }

@@ -140,23 +140,22 @@ pub mod pallet {
 		/// Verify a proof.
 		#[pallet::weight(<T as Config>::WeightInfo::verify_benchmark(vec_proof.len()))]
 		pub fn verify(_origin: OriginFor<T>, vec_proof: Vec<u8>) -> DispatchResult {
-            ensure!(!vec_proof.is_empty(), Error::<T>::ProofIsEmpty);
-
+			ensure!(!vec_proof.is_empty(), Error::<T>::ProofIsEmpty);
 
 			new_verifier::verify(None, None, None).unwrap();
 
-            let proof: ProofDef<T> = vec_proof.try_into().map_err(|_| Error::<T>::TooLongProof)?;
-            ProofStorage::<T>::put(proof.clone());
-            Self::deposit_event(Event::<T>::VerificationProofSet);
+			let proof: ProofDef<T> = vec_proof.try_into().map_err(|_| Error::<T>::TooLongProof)?;
+			ProofStorage::<T>::put(proof.clone());
+			Self::deposit_event(Event::<T>::VerificationProofSet);
 
-            let v = Verifier { key: <VerificationKeyStorage<T>>::get().clone().into_inner() };
-            if v.verify_proof(PublicInputStorage::<T>::get().clone(), proof.into_inner())
-                .map_err(|_| Error::<T>::VerificationKeyIsNotSet)?
-            {
-                Self::deposit_event(Event::<T>::VerificationSuccess);
-            } else {
-                Self::deposit_event(Event::<T>::VerificationFailed);
-            }
+			let v = Verifier { key: <VerificationKeyStorage<T>>::get().clone().into_inner() };
+			if v.verify_proof(PublicInputStorage::<T>::get().clone(), proof.into_inner())
+				.map_err(|_| Error::<T>::VerificationKeyIsNotSet)?
+			{
+				Self::deposit_event(Event::<T>::VerificationSuccess);
+			} else {
+				Self::deposit_event(Event::<T>::VerificationFailed);
+			}
 			Ok(())
 		}
 	}

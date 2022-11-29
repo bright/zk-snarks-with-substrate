@@ -75,10 +75,7 @@ fn test_to_long_proof() {
 fn test_to_short_proof() {
 	new_test_ext().execute_with(|| {
 		assert_err!(
-			ZKSnarks::verify(
-				RuntimeOrigin::none(),
-				Vec::new()
-			),
+			ZKSnarks::verify(RuntimeOrigin::none(), Vec::new()),
 			Error::<Test>::ProofIsEmpty
 		);
 		assert_eq!(zk_events().len(), 0);
