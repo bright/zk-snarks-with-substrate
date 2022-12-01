@@ -34,19 +34,21 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+#[macro_use]
+#[cfg(test)]
+extern crate uint;
+
 #[cfg(feature = "runtime-benchmarks")]
 pub mod benchmarking;
 
 pub mod weights;
 pub use weights::*;
 
-pub mod verifier;
-pub use verifier::*;
-
-pub mod new_verifier;
+pub mod verify;
 
 use frame_support::storage::bounded_vec::BoundedVec;
 pub use pallet::*;
+use sp_std::vec::Vec;
 
 type ProofDef<T> = BoundedVec<u8, <T as Config>::MaxProofLength>;
 type VerificationKey<T> = BoundedVec<u8, <T as Config>::MaxVerificationKeyLength>;
@@ -141,22 +143,20 @@ pub mod pallet {
 		#[pallet::weight(<T as Config>::WeightInfo::verify_benchmark(vec_proof.len()))]
 		pub fn verify(_origin: OriginFor<T>, vec_proof: Vec<u8>) -> DispatchResult {
 			ensure!(!vec_proof.is_empty(), Error::<T>::ProofIsEmpty);
-
-			new_verifier::verify(None, None, None).unwrap();
-
 			let proof: ProofDef<T> = vec_proof.try_into().map_err(|_| Error::<T>::TooLongProof)?;
 			ProofStorage::<T>::put(proof.clone());
 			Self::deposit_event(Event::<T>::VerificationProofSet);
-
-			let v = Verifier { key: <VerificationKeyStorage<T>>::get().clone().into_inner() };
-			if v.verify_proof(PublicInputStorage::<T>::get().clone(), proof.into_inner())
-				.map_err(|_| Error::<T>::VerificationKeyIsNotSet)?
-			{
-				Self::deposit_event(Event::<T>::VerificationSuccess);
-			} else {
-				Self::deposit_event(Event::<T>::VerificationFailed);
+			match verify::verify(None, None, None) {
+				Ok(true) => {
+					Self::deposit_event(Event::<T>::VerificationSuccess);
+					Ok(())
+				},
+				Ok(false) => {
+					Self::deposit_event(Event::<T>::VerificationFailed);
+					Ok(())
+				},
+				Err(_) => DispatchResult::Err(DispatchError::Other("Could not verify proof")),
 			}
-			Ok(())
 		}
 	}
 }

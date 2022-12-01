@@ -30,6 +30,8 @@ group = "0.12.1"
 
 [dev-dependencies]
 sp-core = { version = "6.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.31" }
+uint = "0.8"
+subtle = "2.4.1"
 
 [features]
 default = ["std"]
