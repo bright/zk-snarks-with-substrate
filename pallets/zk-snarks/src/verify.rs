@@ -27,18 +27,7 @@ pub type VerificationResult = Result<bool, VerificationError>;
 
 pub type PublicInputs = Vec<Scalar>;
 
-pub fn verify(
-	vk: Option<VerificationKey>,
-	proof: Option<Proof>,
-	inputs: Option<PublicInputs>,
-) -> VerificationResult {
-	if vk.is_none() || proof.is_none() || inputs.is_none() {
-		return Ok(true)
-	}
-
-	let vk = vk.unwrap();
-	let proof = proof.unwrap();
-	let inputs = inputs.unwrap();
+pub fn verify(vk: VerificationKey, proof: Proof, inputs: PublicInputs) -> VerificationResult {
 	let public_inputs: &[<Bls12 as Engine>::Fr] = &inputs;
 
 	if (public_inputs.len() + 1) != vk.ic.len() {
