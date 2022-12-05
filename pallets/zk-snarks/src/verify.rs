@@ -60,7 +60,7 @@ pub fn verify(vk: VerificationKey, proof: Proof, inputs: PublicInputs) -> Verifi
 #[cfg(test)]
 mod tests {
 	use crate::verify::{verify, Proof, VerificationError, VerificationKey};
-	use bls12_381::{G1Affine, G2Affine, Scalar};
+	use bls12_381::{G1Affine, G2Affine};
 	use std::ops::Deref;
 
 	const ALPHA_X: &str = "2635983656263320256511463995836413167331869092392943593306076905516259749312747842295447349507189592731785901862558";
@@ -107,12 +107,12 @@ mod tests {
 		let ic_2: G1Affine = create_g1(IC_2_X).unwrap();
 
 		//----------VERIFICATION---------------//
-		let ic = vec![ic_1, ic_2];
-		let public_inputs: [Scalar; 1] = [33.into()];
-		let vk = VerificationKey { alpha, beta, gamma, delta, ic };
-		let proof = Proof { a: pi_a, b: pi_b, c: pi_c };
-		let result = verify(vk, proof, public_inputs.into()).unwrap();
-		assert!(result)
+		assert!(verify(
+			VerificationKey { alpha, beta, gamma, delta, ic: vec![ic_1, ic_2] },
+			Proof { a: pi_a, b: pi_b, c: pi_c },
+			[33.into()].into(),
+		)
+		.unwrap())
 	}
 
 	#[test]
@@ -134,12 +134,12 @@ mod tests {
 		let ic_2: G1Affine = create_g1(IC_2_X).unwrap();
 
 		//----------VERIFICATION---------------//
-		let ic = vec![ic_1, ic_2];
-		let public_inputs: [Scalar; 1] = [33.into()];
-		let vk = VerificationKey { alpha, beta, gamma, delta, ic };
-		let proof = Proof { a: pi_a, b: pi_b, c: pi_c };
-		let result = verify(vk, proof, public_inputs.into()).unwrap();
-		assert!(!result)
+		assert!(!verify(
+			VerificationKey { alpha, beta, gamma, delta, ic: vec![ic_1, ic_2] },
+			Proof { a: pi_a, b: pi_b, c: pi_c },
+			[33.into()].into(),
+		)
+		.unwrap())
 	}
 
 	#[test]
@@ -160,12 +160,17 @@ mod tests {
 		let ic_1: G1Affine = create_g1(IC_1_X).unwrap();
 
 		//----------VERIFICATION---------------//
-		let ic = vec![ic_1];
-		let public_inputs: [Scalar; 1] = [33.into()];
-		let vk = VerificationKey { alpha, beta, gamma, delta, ic };
-		let proof = Proof { a: pi_a, b: pi_b, c: pi_c };
-		let result = verify(vk, proof, public_inputs.into());
-		assert_eq!(result.err().unwrap(), VerificationError::InvalidVerificationKey)
+
+		assert_eq!(
+			verify(
+				VerificationKey { alpha, beta, gamma, delta, ic: vec![ic_1] },
+				Proof { a: pi_a, b: pi_b, c: pi_c },
+				[33.into()].into(),
+			)
+			.err()
+			.unwrap(),
+			VerificationError::InvalidVerificationKey
+		)
 	}
 
 	fn create_g1(x: &str) -> Option<G1Affine> {
