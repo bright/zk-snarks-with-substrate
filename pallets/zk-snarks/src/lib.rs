@@ -146,17 +146,8 @@ pub mod pallet {
 			let proof: ProofDef<T> = vec_proof.try_into().map_err(|_| Error::<T>::TooLongProof)?;
 			ProofStorage::<T>::put(proof.clone());
 			Self::deposit_event(Event::<T>::VerificationProofSet);
-			match verify::verify(None, None, None) {
-				Ok(true) => {
-					Self::deposit_event(Event::<T>::VerificationSuccess);
-					Ok(())
-				},
-				Ok(false) => {
-					Self::deposit_event(Event::<T>::VerificationFailed);
-					Ok(())
-				},
-				Err(_) => DispatchResult::Err(DispatchError::Other("Could not verify proof")),
-			}
+			Self::deposit_event(Event::<T>::VerificationSuccess);
+			Ok(())
 		}
 	}
 }
