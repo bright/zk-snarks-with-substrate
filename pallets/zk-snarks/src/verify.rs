@@ -97,7 +97,10 @@ mod tests {
 
 	#[test]
 	fn verify_correct_proof() {
+		// circuit description https://github.com/iden3/circom/blob/7e59274c3e78674c2178766f9b8a4371c760ac3a/mkdocs/docs/getting-started/writing-circuits.md
+
 		//----------VK------------//
+		// sample/verification_key.json
 		let alpha: G1Affine = create_g1(ALPHA_X).unwrap();
 
 		let beta: G2Affine = create_g2(BETA_X_C1, BETA_X_C0).unwrap();
@@ -107,6 +110,7 @@ mod tests {
 		//----------END OF VK------------//
 
 		//----------PROOF---------------//
+		// sample/proof.json
 		let pi_a: G1Affine = create_g1(PI_A_X).unwrap();
 		let pi_b: G2Affine = create_g2(PI_B_X_C1, PI_B_X_C0).unwrap();
 		let pi_c: G1Affine = create_g1(PI_C_X).unwrap();
@@ -118,6 +122,7 @@ mod tests {
 		assert!(verify(
 			VerificationKey { alpha, beta, gamma, delta, ic: vec![ic_1, ic_2] },
 			Proof { a: pi_a, b: pi_b, c: pi_c },
+			// sample/public.json
 			[33.into()].into(),
 		)
 		.unwrap())
