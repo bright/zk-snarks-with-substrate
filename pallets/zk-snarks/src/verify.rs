@@ -112,6 +112,7 @@ mod tests {
 		let pi_c: G1Affine = create_g1(PI_C_X).unwrap();
 		let ic_1: G1Affine = create_g1(IC_1_X).unwrap();
 		let ic_2: G1Affine = create_g1(IC_2_X).unwrap();
+		//------END OF PROOF-----------//
 
 		//----------VERIFICATION---------------//
 		assert!(verify(
@@ -120,6 +121,7 @@ mod tests {
 			[33.into()].into(),
 		)
 		.unwrap())
+		//--------END OF VERIFICATION---------//
 	}
 
 	#[test]
@@ -139,6 +141,7 @@ mod tests {
 		let pi_c: G1Affine = create_g1(PI_A_X).unwrap();
 		let ic_1: G1Affine = create_g1(IC_1_X).unwrap();
 		let ic_2: G1Affine = create_g1(IC_2_X).unwrap();
+		//------END OF PROOF-----------//
 
 		//----------VERIFICATION---------------//
 		assert!(!verify(
@@ -147,6 +150,7 @@ mod tests {
 			[33.into()].into(),
 		)
 		.unwrap())
+		//--------END OF VERIFICATION---------//
 	}
 
 	#[test]
@@ -165,6 +169,7 @@ mod tests {
 		let pi_b: G2Affine = create_g2(PI_B_X_C1, PI_B_X_C0).unwrap();
 		let pi_c: G1Affine = create_g1(PI_A_X).unwrap();
 		let ic_1: G1Affine = create_g1(IC_1_X).unwrap();
+		//------END OF PROOF-----------//
 
 		//----------VERIFICATION---------------//
 
@@ -178,6 +183,7 @@ mod tests {
 			.unwrap(),
 			VerificationError::InvalidVerificationKey
 		)
+		//--------END OF VERIFICATION---------//
 	}
 
 	fn create_g1(x: &str) -> Option<G1Affine> {
