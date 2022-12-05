@@ -18,7 +18,7 @@ pub struct Proof {
 	pub c: G1Affine,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum VerificationError {
 	InvalidVerificationKey,
 }
@@ -59,7 +59,7 @@ pub fn verify(vk: VerificationKey, proof: Proof, inputs: PublicInputs) -> Verifi
 
 #[cfg(test)]
 mod tests {
-	use crate::verify::{verify, Proof, VerificationKey};
+	use crate::verify::{verify, Proof, VerificationError, VerificationKey};
 	use bls12_381::{G1Affine, G2Affine, Scalar};
 	use std::ops::Deref;
 
@@ -140,6 +140,32 @@ mod tests {
 		let proof = Proof { a: pi_a, b: pi_b, c: pi_c };
 		let result = verify(vk, proof, public_inputs.into()).unwrap();
 		assert!(!result)
+	}
+
+	#[test]
+	fn verify_with_incorrect_ic_len() {
+		//----------VK------------//
+		let alpha: G1Affine = create_g1(ALPHA_X).unwrap();
+
+		let beta: G2Affine = create_g2(BETA_X_C1, BETA_X_C0).unwrap();
+
+		let gamma: G2Affine = create_g2(GAMMA_X_C1, GAMMA_X_C0).unwrap();
+		let delta: G2Affine = create_g2(DELTA_X_C1, DELTA_X_C0).unwrap();
+		//----------END OF VK------------//
+
+		//----------PROOF---------------//
+		let pi_a: G1Affine = create_g1(PI_C_X).unwrap();
+		let pi_b: G2Affine = create_g2(PI_B_X_C1, PI_B_X_C0).unwrap();
+		let pi_c: G1Affine = create_g1(PI_A_X).unwrap();
+		let ic_1: G1Affine = create_g1(IC_1_X).unwrap();
+
+		//----------VERIFICATION---------------//
+		let ic = vec![ic_1];
+		let public_inputs: [Scalar; 1] = [33.into()];
+		let vk = VerificationKey { alpha, beta, gamma, delta, ic };
+		let proof = Proof { a: pi_a, b: pi_b, c: pi_c };
+		let result = verify(vk, proof, public_inputs.into());
+		assert_eq!(result.err().unwrap(), VerificationError::InvalidVerificationKey)
 	}
 
 	fn create_g1(x: &str) -> Option<G1Affine> {
