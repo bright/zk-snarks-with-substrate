@@ -34,15 +34,22 @@ pub fn verify(vk: VerificationKey, proof: Proof, inputs: PublicInputs) -> Verifi
 		return Err(InvalidVerificationKey)
 	}
 
+	// ic contains Lᵢ(τ)/δ
+	// Lᵢ(x) = β * Aᵢ(x) + α * Bᵢ(x) + Cᵢ(x)
+	// public variables [33]
+	// w = [1, 33, ...private variables]
+	// acc contains sum of Lᵢ(x) * wᵢ
 	let mut acc = vk.ic[0].to_curve();
 	for (i, b) in public_inputs.iter().zip(vk.ic.iter().skip(1)) {
 		AddAssign::<&<Bls12 as Engine>::G1>::add_assign(&mut acc, &(*b * i));
 	}
 
 	//lhs
+	// Aₚ*Bₚ
 	let a_b_pairing = Bls12::pairing(&proof.a, &proof.b);
 
 	//rhs
+	// αβ + (L_input(τ)/γ)γ + Cₚδ
 	let final_result = Bls12::multi_miller_loop(&[
 		(&vk.alpha, &vk.beta.into()),
 		(&acc.to_affine(), &vk.gamma.into()),
