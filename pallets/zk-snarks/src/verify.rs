@@ -111,7 +111,7 @@ mod tests {
 		let public_inputs: [Scalar; 1] = [33.into()];
 		let vk = VerificationKey { alpha, beta, gamma, delta, ic };
 		let proof = Proof { a: pi_a, b: pi_b, c: pi_c };
-		let result = verify(Some(vk), Some(proof), Some(public_inputs.into())).unwrap();
+		let result = verify(vk, proof, public_inputs.into()).unwrap();
 		assert!(result)
 	}
 
@@ -138,7 +138,7 @@ mod tests {
 		let public_inputs: [Scalar; 1] = [33.into()];
 		let vk = VerificationKey { alpha, beta, gamma, delta, ic };
 		let proof = Proof { a: pi_a, b: pi_b, c: pi_c };
-		let result = verify(Some(vk), Some(proof), Some(public_inputs.into())).unwrap();
+		let result = verify(vk, proof, public_inputs.into()).unwrap();
 		assert!(!result)
 	}
 
