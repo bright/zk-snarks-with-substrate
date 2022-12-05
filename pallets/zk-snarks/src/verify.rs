@@ -174,7 +174,7 @@ mod tests {
 	}
 
 	fn create_g1(x: &str) -> Option<G1Affine> {
-		let mut a: [u8; 48] = [0; 48];
+		let mut a = from_dec_string(x);
 		U256::from_dec_str(x).unwrap().to_big_endian(a.as_mut_slice());
 		// https://github.com/zkcrypto/bls12_381/blob/main/src/g1.rs#L221
 		a[0] |= 1u8 << 7;
@@ -196,9 +196,8 @@ mod tests {
 	}
 
 	fn from_dec_string(number: &str) -> [u8; 48] {
-		let mut a: [u8; 48] = [0; 48];
-		let alpha_1_x = U256::from_dec_str(number).unwrap();
-		alpha_1_x.to_big_endian(a.as_mut_slice());
-		a
+		let mut bytes: [u8; 48] = [0; 48];
+		U256::from_dec_str(number).unwrap().to_big_endian(bytes.as_mut_slice());
+		bytes
 	}
 }
