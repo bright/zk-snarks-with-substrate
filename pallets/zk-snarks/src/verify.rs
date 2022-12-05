@@ -177,7 +177,6 @@ mod tests {
 		//------END OF PROOF-----------//
 
 		//----------VERIFICATION---------------//
-
 		assert_eq!(
 			verify(
 				VerificationKey { alpha, beta, gamma, delta, ic: vec![ic_1] },
