@@ -57,11 +57,7 @@ pub fn verify(vk: VerificationKey, proof: Proof, inputs: PublicInputs) -> Verifi
 	])
 	.final_exponentiation();
 
-	if a_b_pairing == final_result {
-		Ok(true)
-	} else {
-		Ok(false)
-	}
+	Ok(a_b_pairing == final_result)
 }
 
 #[cfg(test)]
