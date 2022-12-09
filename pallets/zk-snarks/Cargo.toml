@@ -26,11 +26,12 @@ sp-std = { version = "4.0.0", default-features = false, git = "https://github.co
 bls12_381 = "0.7.0"
 pairing = "0.22.0"
 group = "0.12.1"
-
+serde = { version = "1.0.149", default-features = false, features = ["derive", "alloc"] }
+serde_json = { version = "1.0.89", default-features = false, features = ["alloc"]}
+uint = { version = "0.8", default-features = false }
 
 [dev-dependencies]
 sp-core = { version = "6.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.31" }
-uint = "0.8"
 
 [features]
 default = ["std"]
