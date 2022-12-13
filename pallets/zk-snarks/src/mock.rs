@@ -84,8 +84,8 @@ impl frame_system::Config for Test {
 }
 
 parameter_types! {
-	pub const MaxVerificationKeyLength: u32 = 4096;
-	pub const MaxProofLength: u32 = 2056;
+	pub const MaxVerificationKeyLength: u32 = 4078;
+	pub const MaxProofLength: u32 = 1113;
 }
 
 impl pallet_zk_snarks::Config for Test {

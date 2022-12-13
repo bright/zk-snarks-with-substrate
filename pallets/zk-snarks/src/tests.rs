@@ -58,7 +58,7 @@ fn test_not_supported_vk_curve() {
 #[test]
 fn test_not_supported_vk_protocol() {
 	new_test_ext().execute_with(|| {
-		let vk = prepare_vk_json("pinocchio", "bls12381");
+		let vk = prepare_vk_json("-", "bls12381");
 		assert_err!(
 			ZKSnarks::setup_verification(RuntimeOrigin::none(), 50, vk.as_bytes().into()),
 			Error::<Test>::NotSupportedProtocol
@@ -99,7 +99,7 @@ fn test_too_long_proof() {
 
 #[test]
 fn test_not_supported_proof_protocol() {
-	let proof = prepare_proof_json("pinocchio", "bls12381");
+	let proof = prepare_proof_json("-", "bls12381");
 
 	new_test_ext().execute_with(|| {
 		assert_err!(
@@ -180,7 +180,7 @@ fn test_verification_success() {
 	});
 }
 
-fn prepare_vk_json(protocol: &str, curve: &str) -> String {
+pub fn prepare_vk_json(protocol: &str, curve: &str) -> String {
 	let vk_template = r#"{
  "protocol": "<protocol>",
  "curve": "<curve>",
