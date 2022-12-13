@@ -249,6 +249,9 @@ mod tests {
 		assert_eq!(v_key.ic[1][0], from_dec_string("3305881491744710205856868316456114914540772066725994230747514104922282269209779243587827394909802115252764372519712"));
 		assert_eq!(v_key.ic[1][1], from_dec_string("2462443929524735084767395208674598757462820081953985438437610428598624587728712969052746628125821805697605346885091"));
 		assert_eq!(v_key.ic[1][2], from_dec_string("1"));
+
+		assert_eq!(v_key.curve, Vec::<u8>::from("bls12381".as_bytes()));
+		assert_eq!(v_key.protocol, Vec::<u8>::from("groth16".as_bytes()));
 	}
 
 	#[test]
@@ -298,6 +301,9 @@ mod tests {
 		assert_eq!(proof.c[0], from_dec_string("3006923877346016048391409264528383002939756547318806158402407618139299715778986391175418348881376388499383266389442"));
 		assert_eq!(proof.c[1], from_dec_string("1307513151230758506579817970515482216448699470263630520204374492458260823057506418477833081567163581258564509876945"));
 		assert_eq!(proof.c[2], from_dec_string("1"));
+
+		assert_eq!(proof.curve, Vec::<u8>::from("bls12381".as_bytes()));
+		assert_eq!(proof.protocol, Vec::<u8>::from("groth16".as_bytes()));
 	}
 
 	fn from_dec_string(dec_str: &str) -> Number {
