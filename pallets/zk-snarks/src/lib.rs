@@ -50,14 +50,15 @@ use frame_support::storage::bounded_vec::BoundedVec;
 pub use pallet::*;
 use sp_std::vec::Vec;
 
+type PublicInputsDef<T> = BoundedVec<u8, <T as Config>::MaxPublicInputsLength>;
 type ProofDef<T> = BoundedVec<u8, <T as Config>::MaxProofLength>;
-type VerificationKey<T> = BoundedVec<u8, <T as Config>::MaxVerificationKeyLength>;
+type VerificationKeyDef<T> = BoundedVec<u8, <T as Config>::MaxVerificationKeyLength>;
 
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
 	use crate::{
-		deserialization::{Proof, VKey},
+		deserialization::{deserialize_public_inputs, Proof, VKey},
 		verify::{SUPPORTED_CURVE, SUPPORTED_PROTOCOL},
 	};
 	use frame_support::pallet_prelude::*;
@@ -76,6 +77,9 @@ pub mod pallet {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		type WeightInfo: WeightInfo;
+
+		#[pallet::constant]
+		type MaxPublicInputsLength: Get<u32>;
 
 		/// The maximum length of the proof.
 		#[pallet::constant]
@@ -97,6 +101,8 @@ pub mod pallet {
 
 	#[pallet::error]
 	pub enum Error<T> {
+		/// Public inputs vector is to long.
+		TooLongPublicInputs,
 		/// The verification key is to long.
 		TooLongVerificationKey,
 		/// The proof is too long.
@@ -117,7 +123,7 @@ pub mod pallet {
 
 	/// Storing a public input.
 	#[pallet::storage]
-	pub type PublicInputStorage<T: Config> = StorageValue<_, u32, ValueQuery>;
+	pub type PublicInputStorage<T: Config> = StorageValue<_, PublicInputsDef<T>, ValueQuery>;
 
 	/// Storing a proof.
 	#[pallet::storage]
@@ -125,7 +131,7 @@ pub mod pallet {
 
 	/// Storing a verification key.
 	#[pallet::storage]
-	pub type VerificationKeyStorage<T: Config> = StorageValue<_, VerificationKey<T>, ValueQuery>;
+	pub type VerificationKeyStorage<T: Config> = StorageValue<_, VerificationKeyDef<T>, ValueQuery>;
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
@@ -133,12 +139,15 @@ pub mod pallet {
 		#[pallet::weight(<T as Config>::WeightInfo::setup_verification_benchmark(vec_vk.len()))]
 		pub fn setup_verification(
 			_origin: OriginFor<T>,
-			pub_input: u32,
+			pub_input: Vec<u8>,
 			vec_vk: Vec<u8>,
 		) -> DispatchResult {
 			// Setting the public input data.
-			PublicInputStorage::<T>::put(pub_input);
-			let vk: VerificationKey<T> =
+			let public_inputs: PublicInputsDef<T> =
+				pub_input.try_into().map_err(|_| Error::<T>::TooLongPublicInputs)?;
+			let _deserialized_public_inputs = deserialize_public_inputs(public_inputs.as_slice());
+			PublicInputStorage::<T>::put(public_inputs);
+			let vk: VerificationKeyDef<T> =
 				vec_vk.try_into().map_err(|_| Error::<T>::TooLongVerificationKey)?;
 			let deserialized_vk = VKey::from_json_u8_slice(vk.as_slice())
 				.map_err(|_| Error::<T>::MalformedVerificationKey)?;

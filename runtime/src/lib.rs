@@ -275,6 +275,7 @@ impl pallet_sudo::Config for Runtime {
 
 /// Configure the pallet-template in pallets/zk-snarks.
 impl pallet_zk_snarks::Config for Runtime {
+	type MaxPublicInputsLength = ConstU32<9>;
 	type MaxProofLength = ConstU32<1113>;
 	type MaxVerificationKeyLength = ConstU32<4078>;
 	type RuntimeEvent = RuntimeEvent;

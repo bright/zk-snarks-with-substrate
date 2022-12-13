@@ -115,6 +115,10 @@ where
 	Ok(s.as_bytes().into())
 }
 
+pub fn deserialize_public_inputs(inputs: &[u8]) -> Result<Vec<u32>, ()> {
+	serde_json::from_slice(inputs).map_err(|_| {})
+}
+
 #[cfg(test)]
 mod tests {
 	use crate::deserialization::{Number, Proof, VKey, U256};

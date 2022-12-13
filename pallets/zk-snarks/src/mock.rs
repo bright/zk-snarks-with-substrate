@@ -84,11 +84,13 @@ impl frame_system::Config for Test {
 }
 
 parameter_types! {
+	pub const MaxPublicInputsLength: u32 = 9;
 	pub const MaxVerificationKeyLength: u32 = 4078;
 	pub const MaxProofLength: u32 = 1113;
 }
 
 impl pallet_zk_snarks::Config for Test {
+	type MaxPublicInputsLength = MaxPublicInputsLength;
 	type MaxProofLength = MaxProofLength;
 	type MaxVerificationKeyLength = MaxVerificationKeyLength;
 	type RuntimeEvent = RuntimeEvent;
