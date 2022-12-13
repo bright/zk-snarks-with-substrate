@@ -16,6 +16,8 @@ pub struct VKey {
 	pub protocol: Vec<u8>,
 	#[serde(deserialize_with = "str_to_u8_vec_deserializer")]
 	pub curve: Vec<u8>,
+	#[serde(alias = "nPublic")]
+	pub public_inputs_len: u8,
 	#[serde(alias = "vk_alpha_1")]
 	#[serde(deserialize_with = "g1_deserializer")]
 	pub alpha: G1,
@@ -116,12 +118,20 @@ where
 }
 
 pub fn deserialize_public_inputs(inputs: &[u8]) -> Result<Vec<u32>, ()> {
-	serde_json::from_slice(inputs).map_err(|_| {})
+	let inputs: Vec<&str> = serde_json::from_slice(inputs).unwrap();
+	let mut parsed_inputs: Vec<u32> = Vec::with_capacity(inputs.len());
+	for i in 0..inputs.len() {
+		match u32::from_str_radix(inputs[i], 10) {
+			Ok(n) => parsed_inputs.push(n),
+			Err(_) => return Err(()),
+		}
+	}
+	Ok(parsed_inputs)
 }
 
 #[cfg(test)]
 mod tests {
-	use crate::deserialization::{Number, Proof, VKey, U256};
+	use crate::deserialization::{deserialize_public_inputs, Number, Proof, VKey, U256};
 
 	#[test]
 	fn test_vk_deserialization() {
@@ -256,6 +266,7 @@ mod tests {
 
 		assert_eq!(v_key.curve, Vec::<u8>::from("bls12381".as_bytes()));
 		assert_eq!(v_key.protocol, Vec::<u8>::from("groth16".as_bytes()));
+		assert_eq!(v_key.public_inputs_len, 1);
 	}
 
 	#[test]
@@ -308,6 +319,17 @@ mod tests {
 
 		assert_eq!(proof.curve, Vec::<u8>::from("bls12381".as_bytes()));
 		assert_eq!(proof.protocol, Vec::<u8>::from("groth16".as_bytes()));
+	}
+
+	#[test]
+	fn public_inputs_deserialization() {
+		let public_inputs_json = r#"[
+ "33"
+]"#;
+		let public_inputs =
+			deserialize_public_inputs(public_inputs_json.as_bytes().into()).unwrap();
+		assert_eq!(public_inputs.len(), 1);
+		assert_eq!(public_inputs[0], 33);
 	}
 
 	fn from_dec_string(dec_str: &str) -> Number {

@@ -111,6 +111,21 @@ fn test_too_long_public_inputs() {
 }
 
 #[test]
+fn test_public_inputs_mismatch() {
+	new_test_ext().execute_with(|| {
+		assert_err!(
+			ZKSnarks::setup_verification(
+				RuntimeOrigin::none(),
+				prepare_incorrect_public_inputs_json().as_bytes().into(),
+				prepare_vk_json("groth16", "bls12381").as_bytes().into()
+			),
+			Error::<Test>::PublicInputsMismatch
+		);
+		assert_eq!(zk_events().len(), 0);
+	});
+}
+
+#[test]
 fn test_too_long_proof() {
 	new_test_ext().execute_with(|| {
 		assert_err!(
@@ -218,6 +233,12 @@ fn test_verification_success() {
 fn prepare_public_inputs_json() -> String {
 	r#"[
  "33"
+]"#
+	.to_owned()
+}
+
+fn prepare_incorrect_public_inputs_json() -> String {
+	r#"[
 ]"#
 	.to_owned()
 }

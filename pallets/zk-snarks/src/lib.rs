@@ -101,6 +101,8 @@ pub mod pallet {
 
 	#[pallet::error]
 	pub enum Error<T> {
+		/// Public inputs mismatch
+		PublicInputsMismatch,
 		/// Public inputs vector is to long.
 		TooLongPublicInputs,
 		/// The verification key is to long.
@@ -115,6 +117,8 @@ pub mod pallet {
 		MalformedVerificationKey,
 		/// Malformed proof
 		MalformedProof,
+		/// Malformed public inputs
+		MalformedPublicInputs,
 		/// Curve is not supported
 		NotSupportedCurve,
 		/// Protocol is not supported
@@ -145,7 +149,8 @@ pub mod pallet {
 			// Setting the public input data.
 			let public_inputs: PublicInputsDef<T> =
 				pub_input.try_into().map_err(|_| Error::<T>::TooLongPublicInputs)?;
-			let _deserialized_public_inputs = deserialize_public_inputs(public_inputs.as_slice());
+			let deserialized_public_inputs = deserialize_public_inputs(public_inputs.as_slice())
+				.map_err(|_| Error::<T>::MalformedPublicInputs)?;
 			PublicInputStorage::<T>::put(public_inputs);
 			let vk: VerificationKeyDef<T> =
 				vec_vk.try_into().map_err(|_| Error::<T>::TooLongVerificationKey)?;
@@ -158,6 +163,10 @@ pub mod pallet {
 			ensure!(
 				deserialized_vk.protocol == SUPPORTED_PROTOCOL.as_bytes(),
 				Error::<T>::NotSupportedProtocol
+			);
+			ensure!(
+				deserialized_vk.public_inputs_len == deserialized_public_inputs.len() as u8,
+				Error::<T>::PublicInputsMismatch
 			);
 			VerificationKeyStorage::<T>::put(vk);
 			Self::deposit_event(Event::<T>::VerificationSetupCompleted);
