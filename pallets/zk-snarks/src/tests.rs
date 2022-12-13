@@ -180,7 +180,7 @@ fn test_verification_success() {
 	});
 }
 
-pub fn prepare_vk_json(protocol: &str, curve: &str) -> String {
+fn prepare_vk_json(protocol: &str, curve: &str) -> String {
 	let vk_template = r#"{
  "protocol": "<protocol>",
  "curve": "<curve>",
