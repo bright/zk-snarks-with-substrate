@@ -12,6 +12,10 @@ type G2 = [[Number; 2]; 3];
 
 #[derive(Deserialize)]
 pub struct VKey {
+	#[serde(deserialize_with = "str_to_u8_vec_deserializer")]
+	pub protocol: Vec<u8>,
+	#[serde(deserialize_with = "str_to_u8_vec_deserializer")]
+	pub curve: Vec<u8>,
 	#[serde(alias = "vk_alpha_1")]
 	#[serde(deserialize_with = "g1_deserializer")]
 	pub alpha: G1,
@@ -29,8 +33,18 @@ pub struct VKey {
 	pub ic: Vec<G1>,
 }
 
+impl VKey {
+	pub fn from_json_u8_slice(slice: &[u8]) -> Result<Self, ()> {
+		serde_json::from_slice(slice).map_err(|_| ())
+	}
+}
+
 #[derive(Deserialize)]
 pub struct Proof {
+	#[serde(deserialize_with = "str_to_u8_vec_deserializer")]
+	pub protocol: Vec<u8>,
+	#[serde(deserialize_with = "str_to_u8_vec_deserializer")]
+	pub curve: Vec<u8>,
 	#[serde(alias = "pi_a")]
 	#[serde(deserialize_with = "g1_deserializer")]
 	pub a: G1,
@@ -40,6 +54,12 @@ pub struct Proof {
 	#[serde(alias = "pi_c")]
 	#[serde(deserialize_with = "g1_deserializer")]
 	pub c: G1,
+}
+
+impl Proof {
+	pub fn from_json_u8_slice(slice: &[u8]) -> Result<Self, ()> {
+		serde_json::from_slice(slice).map_err(|_| ())
+	}
 }
 
 pub fn g1_deserializer<'de, D>(de: D) -> Result<[Number; 3], D::Error>
@@ -85,6 +105,14 @@ where
 		}
 	}
 	Ok(g2_numbers)
+}
+
+pub fn str_to_u8_vec_deserializer<'de, D>(de: D) -> Result<Vec<u8>, D::Error>
+where
+	D: Deserializer<'de>,
+{
+	let s: &str = serde::Deserialize::deserialize(de)?;
+	Ok(s.as_bytes().into())
 }
 
 #[cfg(test)]
@@ -187,7 +215,7 @@ mod tests {
   ]
  ]
 }"#;
-		let v_key: VKey = serde_json::from_str(&vk).unwrap();
+		let v_key: VKey = VKey::from_json_u8_slice(vk.as_bytes()).unwrap();
 
 		assert_eq!(v_key.alpha[0], from_dec_string("2635983656263320256511463995836413167331869092392943593306076905516259749312747842295447349507189592731785901862558"));
 		assert_eq!(v_key.alpha[1], from_dec_string("743892996456702519498029594549937288641619275055957975879157306988929970626325326222697609972550552691064908651931"));
@@ -254,7 +282,7 @@ mod tests {
  "curve": "bls12381"
 }"#;
 
-		let proof: Proof = serde_json::from_str(&proof).unwrap();
+		let proof: Proof = Proof::from_json_u8_slice(proof.as_bytes()).unwrap();
 
 		assert_eq!(proof.a[0], from_dec_string("2820173869801000183955769496344276101575675010174203082588560105436284422640780128231242184109173767085197647834267"));
 		assert_eq!(proof.a[1], from_dec_string("1152541093585973172499551859168528642628429504007613830168996825879806250289422935864437193085184388469171892221011"));
