@@ -7,6 +7,67 @@ use sp_std::{ops::AddAssign, prelude::*};
 pub const SUPPORTED_CURVE: &str = "bls12381";
 pub const SUPPORTED_PROTOCOL: &str = "groth16";
 
+pub struct G1Bytes {
+	inner: [u8; 48],
+}
+
+pub struct G2Bytes {
+	inner: [u8; 96],
+}
+
+impl G1Bytes {
+	pub fn new(x_bytes: &[u8; 48]) -> Self {
+		let mut new_bytes = x_bytes.to_owned();
+		// https://github.com/zkcrypto/bls12_381/blob/main/src/g1.rs#L221
+		new_bytes[0] |= 1u8 << 7;
+		new_bytes[0] |= &0u8;
+		new_bytes[0] |= &(1u8 << 5);
+		G1Bytes { inner: new_bytes }
+	}
+}
+
+impl G2Bytes {
+	pub fn new(x_c1_bytes: &[u8; 48], x_c0_bytes: &[u8; 48]) -> Self {
+		let mut new_bytes: [u8; 96] = [0; 96];
+		for i in 0..48 {
+			new_bytes[i] = x_c1_bytes[i];
+			new_bytes[48 + i] = x_c0_bytes[i];
+		}
+		// https://github.com/zkcrypto/bls12_381/blob/main/src/g2.rs#L264
+		new_bytes[0] |= 1u8 << 7;
+		new_bytes[0] |= &0u8;
+		new_bytes[0] |= &(1u8 << 5);
+		G2Bytes { inner: new_bytes }
+	}
+}
+
+impl TryFrom<&G1Bytes> for G1Affine {
+	type Error = ();
+
+	fn try_from(value: &G1Bytes) -> Result<Self, Self::Error> {
+		let g1 = G1Affine::from_compressed(&value.inner);
+		//todo: doesnt look nice
+		if g1.is_none().into() {
+			Err(())
+		} else {
+			Ok(g1.unwrap())
+		}
+	}
+}
+
+impl TryFrom<&G2Bytes> for G2Affine {
+	type Error = ();
+
+	fn try_from(value: &G2Bytes) -> Result<Self, Self::Error> {
+		let g2 = G2Affine::from_compressed(&value.inner);
+		if g2.is_none().into() {
+			Err(())
+		} else {
+			Ok(g2.unwrap())
+		}
+	}
+}
+
 pub struct VerificationKey {
 	pub alpha: G1Affine,
 	pub beta: G2Affine,
@@ -15,10 +76,42 @@ pub struct VerificationKey {
 	pub ic: Vec<G1Affine>,
 }
 
+impl VerificationKey {
+	pub fn from(
+		alpha: &G1Bytes,
+		beta: &G2Bytes,
+		gamma: &G2Bytes,
+		delta: &G2Bytes,
+		ic: &Vec<G1Bytes>,
+	) -> Result<Self, ()> {
+		let alpha = alpha.try_into()?;
+		let beta: G2Affine = beta.try_into()?;
+		let gamma: G2Affine = gamma.try_into()?;
+		let delta: G2Affine = delta.try_into()?;
+		let mut ic_2: Vec<G1Affine> = Vec::with_capacity(ic.len());
+
+		for i in 0..ic.len() {
+			ic_2.push(G1Affine::try_from(&ic[i])?);
+		}
+
+		Ok(VerificationKey { alpha, beta, gamma, delta, ic: ic_2 })
+	}
+}
+
 pub struct Proof {
 	pub a: G1Affine,
 	pub b: G2Affine,
 	pub c: G1Affine,
+}
+
+impl Proof {
+	pub fn from(a: &G1Bytes, b: &G2Bytes, c: &G1Bytes) -> Result<Self, ()> {
+		let a = a.try_into()?;
+		let b = b.try_into()?;
+		let c = c.try_into()?;
+
+		Ok(Proof { a, b, c })
+	}
 }
 
 #[derive(Debug, PartialEq)]
@@ -29,6 +122,10 @@ pub enum VerificationError {
 pub type VerificationResult = Result<bool, VerificationError>;
 
 pub type PublicInputs = Vec<Scalar>;
+
+pub fn prepare_public_inputs(inputs: Vec<u64>) -> Vec<Scalar> {
+	inputs.into_iter().map(|i| Scalar::from(i)).collect()
+}
 
 pub fn verify(vk: VerificationKey, proof: Proof, inputs: PublicInputs) -> VerificationResult {
 	let public_inputs: &[<Bls12 as Engine>::Fr] = &inputs;
@@ -65,8 +162,9 @@ pub fn verify(vk: VerificationKey, proof: Proof, inputs: PublicInputs) -> Verifi
 
 #[cfg(test)]
 mod tests {
-	use crate::verify::{verify, Proof, VerificationError, VerificationKey};
+	use crate::verify::{verify, G1Bytes, G2Bytes, Proof, VerificationError, VerificationKey};
 	use bls12_381::{G1Affine, G2Affine};
+	use frame_support::assert_ok;
 	use std::ops::Deref;
 
 	const ALPHA_X: &str = "2635983656263320256511463995836413167331869092392943593306076905516259749312747842295447349507189592731785901862558";
@@ -92,6 +190,29 @@ mod tests {
 
 	construct_uint! {
 		pub struct U256(6);
+	}
+
+	#[test]
+	fn verification_key_from_correct_coordinates_is_ok() {
+		let vk = VerificationKey::from(
+			&G1Bytes::new(&from_dec_string(ALPHA_X)),
+			&G2Bytes::new(&from_dec_string(BETA_X_C1), &from_dec_string(BETA_X_C0)),
+			&G2Bytes::new(&from_dec_string(GAMMA_X_C1), &from_dec_string(GAMMA_X_C0)),
+			&G2Bytes::new(&from_dec_string(DELTA_X_C1), &from_dec_string(DELTA_X_C0)),
+			&vec![G1Bytes::new(&from_dec_string(IC_1_X)), G1Bytes::new(&from_dec_string(IC_2_X))],
+		);
+
+		assert!(vk.is_ok())
+	}
+
+	#[test]
+	fn proof_from_correct_coordinates_is_ok() {
+		let proof = Proof::from(
+			&G1Bytes::new(&from_dec_string(PI_A_X)),
+			&G2Bytes::new(&from_dec_string(PI_B_X_C1), &from_dec_string(PI_B_X_C0)),
+			&G1Bytes::new(&from_dec_string(PI_C_X)),
+		);
+		assert!(proof.is_ok())
 	}
 
 	#[test]
@@ -189,26 +310,12 @@ mod tests {
 		//--------END OF VERIFICATION---------//
 	}
 
-	fn create_g1(x: &str) -> Option<G1Affine> {
-		let mut a = from_dec_string(x);
-		U256::from_dec_str(x).unwrap().to_big_endian(a.as_mut_slice());
-		// https://github.com/zkcrypto/bls12_381/blob/main/src/g1.rs#L221
-		a[0] |= 1u8 << 7;
-		a[0] |= &0u8;
-		a[0] |= &(1u8 << 5);
-		G1Affine::from_compressed(&a).into()
+	fn create_g1(x: &str) -> Result<G1Affine, ()> {
+		G1Affine::try_from(&G1Bytes::new(&from_dec_string(x)))
 	}
 
-	fn create_g2(x_c1: &str, x_c0: &str) -> Option<G2Affine> {
-		let mut beta_bytes: Vec<u8> = vec![];
-		beta_bytes.extend_from_slice(&from_dec_string(x_c1));
-		beta_bytes.extend_from_slice(&from_dec_string(x_c0));
-		// https://github.com/zkcrypto/bls12_381/blob/main/src/g2.rs#L264
-		beta_bytes[0] |= 1u8 << 7;
-		beta_bytes[0] |= &0u8;
-		beta_bytes[0] |= &(1u8 << 5);
-		let beta_byts_arr: Box<[u8; 96]> = beta_bytes.into_boxed_slice().try_into().unwrap();
-		G2Affine::from_compressed(beta_byts_arr.deref()).into()
+	fn create_g2(x_c1: &str, x_c0: &str) -> Result<G2Affine, ()> {
+		G2Affine::try_from(&G2Bytes::new(&from_dec_string(x_c1), &from_dec_string(x_c0)))
 	}
 
 	fn from_dec_string(number: &str) -> [u8; 48] {
