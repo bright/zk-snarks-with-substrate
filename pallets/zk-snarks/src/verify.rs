@@ -164,8 +164,6 @@ pub fn verify(vk: VerificationKey, proof: Proof, inputs: PublicInputs) -> Verifi
 mod tests {
 	use crate::verify::{verify, G1Bytes, G2Bytes, Proof, VerificationError, VerificationKey};
 	use bls12_381::{G1Affine, G2Affine};
-	use frame_support::assert_ok;
-	use std::ops::Deref;
 
 	const ALPHA_X: &str = "2635983656263320256511463995836413167331869092392943593306076905516259749312747842295447349507189592731785901862558";
 
