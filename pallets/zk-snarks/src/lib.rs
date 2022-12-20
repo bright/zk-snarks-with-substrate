@@ -60,8 +60,8 @@ pub mod pallet {
 	use crate::{
 		deserialization::{deserialize_public_inputs, Proof, VKey},
 		verify::{
-			prepare_public_inputs, verify, G1Bytes, G2Bytes, Proof as VProof, VerificationKey,
-			SUPPORTED_CURVE, SUPPORTED_PROTOCOL,
+			prepare_public_inputs, verify, G1UncompressedBytes, G2UncompressedBytes,
+			Proof as VProof, VerificationKey, SUPPORTED_CURVE, SUPPORTED_PROTOCOL,
 		},
 	};
 	use frame_support::pallet_prelude::*;
@@ -210,10 +210,15 @@ pub mod pallet {
 				.map_err(|_| Error::<T>::MalformedPublicInputs)?;
 			let vk = prepare_verification_key(deserialized_vk)
 				.map_err(|_| Error::<T>::VerificationKeyCreationError)?;
-			let proof = VProof::from(
-				&G1Bytes::new(&deserialized_proof.a[0]),
-				&G2Bytes::new(&deserialized_proof.b[0][1], &deserialized_proof.b[0][0]),
-				&G1Bytes::new(&deserialized_proof.c[0]),
+			let proof = VProof::from_uncompressed(
+				&G1UncompressedBytes::new(deserialized_proof.a[0], deserialized_proof.a[1]),
+				&G2UncompressedBytes::new(
+					deserialized_proof.b[0][0],
+					deserialized_proof.b[0][1],
+					deserialized_proof.b[1][0],
+					deserialized_proof.b[1][1],
+				),
+				&G1UncompressedBytes::new(deserialized_proof.c[0], deserialized_proof.c[1]),
 			)
 			.map_err(|_| Error::<T>::ProofCreationError)?;
 
@@ -232,16 +237,32 @@ pub mod pallet {
 	}
 
 	fn prepare_verification_key(deserialized_vk: VKey) -> Result<VerificationKey, ()> {
-		let mut ic: Vec<G1Bytes> = Vec::with_capacity(deserialized_vk.ic.len());
+		let mut ic: Vec<G1UncompressedBytes> = Vec::with_capacity(deserialized_vk.ic.len());
 		for i in 0..deserialized_vk.ic.len() {
-			let g1_bytes = G1Bytes::new(&deserialized_vk.ic[i][0]);
+			let g1_bytes =
+				G1UncompressedBytes::new(deserialized_vk.ic[i][0], deserialized_vk.ic[i][1]);
 			ic.push(g1_bytes)
 		}
-		VerificationKey::from(
-			&G1Bytes::new(&deserialized_vk.alpha[0]),
-			&G2Bytes::new(&deserialized_vk.beta[0][1], &deserialized_vk.beta[0][0]),
-			&G2Bytes::new(&deserialized_vk.gamma[0][1], &deserialized_vk.gamma[0][0]),
-			&G2Bytes::new(&deserialized_vk.delta[0][1], &deserialized_vk.delta[0][0]),
+		VerificationKey::from_uncompressed(
+			&G1UncompressedBytes::new(deserialized_vk.alpha[0], deserialized_vk.alpha[1]),
+			&G2UncompressedBytes::new(
+				deserialized_vk.beta[0][0],
+				deserialized_vk.beta[0][1],
+				deserialized_vk.beta[1][0],
+				deserialized_vk.beta[1][1],
+			),
+			&G2UncompressedBytes::new(
+				deserialized_vk.gamma[0][0],
+				deserialized_vk.gamma[0][1],
+				deserialized_vk.gamma[1][0],
+				deserialized_vk.gamma[1][1],
+			),
+			&G2UncompressedBytes::new(
+				deserialized_vk.delta[0][0],
+				deserialized_vk.delta[0][1],
+				deserialized_vk.delta[1][0],
+				deserialized_vk.delta[1][1],
+			),
 			&ic,
 		)
 	}
