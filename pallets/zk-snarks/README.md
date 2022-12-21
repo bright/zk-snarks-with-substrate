@@ -1,32 +1,28 @@
 # ZK-Snarks pallet
 
-Building the project
+## Overview
+
+**Please note: This version is just a skeleton for the further implementation.**
+
+Pallet is designed to store on-chain data:
+* **public inputs** - type of `u32`.
+* **verification key** - bounded vector of `u8` (max size 1024).
+* **proof** - bounded vector of `u8` (max size 1024).
+
+Pallets defines two extrinsics:
+* **setup_verification** - allows to store the `public inputs` and the `verification key`.
+* **verify** - accepts the `proof` and run the verification procedure.
+
+Currently, verification process is very simple. If the `proof` length is equal to the `public inputs` value, than verification pass. Otherwise, it will fail.
+
+## Build and run
 ```
-cargo build --manifest-path=../../Cargo.toml --release
+cargo run --manifest-path=../../Cargo.toml --release
 ```
 
-Running unit tests:
-```
-cargo test
-```
+Interaction with the node can be done through [polkadotjs](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/extrinsics) app. 
 
-Running benchmark tests:
+## Unit tests:
 ```
-cargo test --package pallet-zk-snarks --features runtime-benchmarks
-```
-
-Benchmarking:
-```
-cargo build --manifest-path=../../Cargo.toml --package node-template --release --features runtime-benchmarks
-```
-
-Generating weights:
-```
-../../target/release/node-template benchmark pallet \
---chain dev \
---pallet pallet-zk-snarks \
---extrinsic '*' \
---steps 20 \
---repeat 10 \
---output src/weights.rs
+cargo test --manifest-path=../../Cargo.toml
 ```
