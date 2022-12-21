@@ -202,6 +202,7 @@ pub mod pallet {
 
 			let vk = VerificationKeyStorage::<T>::get();
 
+			ensure!(!vk.is_empty(), Error::<T>::VerificationKeyIsNotSet);
 			let deserialized_vk = VKey::from_json_u8_slice(vk.as_slice())
 				.map_err(|_| Error::<T>::MalformedVerificationKey)?;
 
