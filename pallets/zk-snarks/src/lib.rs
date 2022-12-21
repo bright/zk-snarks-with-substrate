@@ -35,7 +35,6 @@ mod mock;
 mod tests;
 
 #[macro_use]
-#[cfg(test)]
 extern crate uint;
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -44,6 +43,7 @@ pub mod benchmarking;
 pub mod weights;
 pub use weights::*;
 
+mod deserialization;
 pub mod verify;
 
 use frame_support::storage::bounded_vec::BoundedVec;
