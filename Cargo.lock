@@ -545,6 +545,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "bls12_381"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "62250ece575fa9b22068b3a8d59586f01d426dd7785522efd97632959e71c986"
+dependencies = [
+ "ff 0.12.1",
+ "group 0.12.1",
+ "pairing",
+ "rand_core 0.6.4",
+ "subtle",
+]
+
+[[package]]
 name = "bs58"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1421,9 +1434,9 @@ dependencies = [
  "base16ct",
  "crypto-bigint",
  "der",
- "ff",
+ "ff 0.11.1",
  "generic-array 0.14.6",
- "group",
+ "group 0.11.0",
  "rand_core 0.6.4",
  "sec1",
  "subtle",
@@ -1533,6 +1546,17 @@ version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "131655483be284720a17d74ff97592b8e76576dc25563148601df2d7c9080924"
 dependencies = [
+ "rand_core 0.6.4",
+ "subtle",
+]
+
+[[package]]
+name = "ff"
+version = "0.12.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d013fc25338cc558c5c2cfbad646908fb23591e2404481826742b651c9af7160"
+dependencies = [
+ "bitvec",
  "rand_core 0.6.4",
  "subtle",
 ]
@@ -2131,7 +2155,18 @@ version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bc5ac374b108929de78460075f3dc439fa66df9d8fc77e8f12caa5165fcf0c89"
 dependencies = [
- "ff",
+ "ff 0.11.1",
+ "rand_core 0.6.4",
+ "subtle",
+]
+
+[[package]]
+name = "group"
+version = "0.12.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5dfbfb3a6cfbd390d5c9564ab283a0349b9b9fcd46a706c1eb10e0db70bfbac7"
+dependencies = [
+ "ff 0.12.1",
  "rand_core 0.6.4",
  "subtle",
 ]
@@ -2897,7 +2932,7 @@ dependencies = [
  "sha2 0.10.6",
  "smallvec",
  "thiserror",
- "uint",
+ "uint 0.9.4",
  "unsigned-varint",
  "void",
 ]
@@ -3856,6 +3891,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9ff7415e9ae3fff1225851df9e0d9e4e5479f947619774677a63572e55e80eff"
 
 [[package]]
+name = "pairing"
+version = "0.22.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "135590d8bdba2b31346f9cd1fb2a912329f5135e832a4f422942eb6ead8b6b3b"
+dependencies = [
+ "group 0.12.1",
+]
+
+[[package]]
 name = "pallet-aura"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.31#7a4e5163091384c4c10b6d76f5cb80dac0834f38"
@@ -4037,15 +4081,19 @@ dependencies = [
 name = "pallet-zk-snarks"
 version = "4.0.0-dev"
 dependencies = [
+ "bls12_381",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "group 0.12.1",
+ "pairing",
  "parity-scale-codec",
  "scale-info",
  "sp-core",
  "sp-io",
  "sp-runtime",
  "sp-std 4.0.0 (git+https://github.com/paritytech/substrate.git)",
+ "uint 0.8.5",
 ]
 
 [[package]]
@@ -4430,7 +4478,7 @@ dependencies = [
  "impl-codec",
  "impl-serde",
  "scale-info",
- "uint",
+ "uint 0.9.4",
 ]
 
 [[package]]
@@ -7738,6 +7786,18 @@ name = "ucd-trie"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9e79c4d996edb816c91e4308506774452e55e95c3c9de07b6729e17e15a5ef81"
+
+[[package]]
+name = "uint"
+version = "0.8.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9db035e67dfaf7edd9aebfe8676afcd63eed53c8a4044fed514c8cccf1835177"
+dependencies = [
+ "byteorder",
+ "crunchy",
+ "rustc-hex",
+ "static_assertions",
+]
 
 [[package]]
 name = "uint"
