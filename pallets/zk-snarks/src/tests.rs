@@ -36,7 +36,11 @@ use frame_support::{assert_err, assert_ok};
 fn test_setup_verification() {
 	new_test_ext().execute_with(|| {
 		let vk = prepare_vk_json("groth16", "bls12381");
-		assert_ok!(ZKSnarks::setup_verification(RuntimeOrigin::none(), 50, vk.as_bytes().into()));
+		assert_ok!(ZKSnarks::setup_verification(
+			RuntimeOrigin::none(),
+			prepare_public_inputs_json().as_bytes().into(),
+			vk.as_bytes().into()
+		));
 		let events = zk_events();
 		assert_eq!(events.len(), 1);
 		assert_eq!(events[0], Event::<Test>::VerificationSetupCompleted);
@@ -47,7 +51,11 @@ fn test_not_supported_vk_curve() {
 	new_test_ext().execute_with(|| {
 		let vk = prepare_vk_json("groth16", "bn128");
 		assert_err!(
-			ZKSnarks::setup_verification(RuntimeOrigin::none(), 50, vk.as_bytes().into()),
+			ZKSnarks::setup_verification(
+				RuntimeOrigin::none(),
+				prepare_public_inputs_json().as_bytes().into(),
+				vk.as_bytes().into()
+			),
 			Error::<Test>::NotSupportedCurve
 		);
 		let events = zk_events();
@@ -60,7 +68,11 @@ fn test_not_supported_vk_protocol() {
 	new_test_ext().execute_with(|| {
 		let vk = prepare_vk_json("-", "bls12381");
 		assert_err!(
-			ZKSnarks::setup_verification(RuntimeOrigin::none(), 50, vk.as_bytes().into()),
+			ZKSnarks::setup_verification(
+				RuntimeOrigin::none(),
+				prepare_public_inputs_json().as_bytes().into(),
+				vk.as_bytes().into()
+			),
 			Error::<Test>::NotSupportedProtocol
 		);
 		let events = zk_events();
@@ -74,10 +86,40 @@ fn test_too_long_verification_key() {
 		assert_err!(
 			ZKSnarks::setup_verification(
 				RuntimeOrigin::none(),
-				50,
+				prepare_public_inputs_json().as_bytes().into(),
 				vec![0; (<Test as Config>::MaxVerificationKeyLength::get() + 1) as usize]
 			),
 			Error::<Test>::TooLongVerificationKey
+		);
+		assert_eq!(zk_events().len(), 0);
+	});
+}
+
+#[test]
+fn test_too_long_public_inputs() {
+	new_test_ext().execute_with(|| {
+		assert_err!(
+			ZKSnarks::setup_verification(
+				RuntimeOrigin::none(),
+				vec![0; (<Test as Config>::MaxPublicInputsLength::get() + 1) as usize],
+				prepare_vk_json("groth16", "bls12381").as_bytes().into()
+			),
+			Error::<Test>::TooLongPublicInputs
+		);
+		assert_eq!(zk_events().len(), 0);
+	});
+}
+
+#[test]
+fn test_public_inputs_mismatch() {
+	new_test_ext().execute_with(|| {
+		assert_err!(
+			ZKSnarks::setup_verification(
+				RuntimeOrigin::none(),
+				prepare_incorrect_public_inputs_json().as_bytes().into(),
+				prepare_vk_json("groth16", "bls12381").as_bytes().into()
+			),
+			Error::<Test>::PublicInputsMismatch
 		);
 		assert_eq!(zk_events().len(), 0);
 	});
@@ -152,7 +194,11 @@ fn test_verify_without_verification_key() {
 // todo: remove ignore once verify called with proper arguments
 fn test_verification_failed() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(ZKSnarks::setup_verification(RuntimeOrigin::none(), 7, br#"1234567"#.to_vec()));
+		assert_ok!(ZKSnarks::setup_verification(
+			RuntimeOrigin::none(),
+			prepare_public_inputs_json().as_bytes().into(),
+			br#"1234567"#.to_vec()
+		));
 		assert_ok!(ZKSnarks::verify(RuntimeOrigin::none(), vec![0; 50]));
 
 		let events = zk_events();
@@ -169,7 +215,11 @@ fn test_verification_success() {
 		let vk = prepare_vk_json("groth16", "bls12381");
 		let proof = prepare_proof_json("groth16", "bls12381");
 
-		assert_ok!(ZKSnarks::setup_verification(RuntimeOrigin::none(), 7, vk.as_bytes().into()));
+		assert_ok!(ZKSnarks::setup_verification(
+			RuntimeOrigin::none(),
+			prepare_public_inputs_json().as_bytes().into(),
+			vk.as_bytes().into()
+		));
 		assert_ok!(ZKSnarks::verify(RuntimeOrigin::none(), proof.as_bytes().into()));
 
 		let events = zk_events();
@@ -178,6 +228,19 @@ fn test_verification_success() {
 		assert_eq!(events[1], Event::<Test>::VerificationProofSet);
 		assert_eq!(events[2], Event::<Test>::VerificationSuccess);
 	});
+}
+
+fn prepare_public_inputs_json() -> String {
+	r#"[
+ "33"
+]"#
+	.to_owned()
+}
+
+fn prepare_incorrect_public_inputs_json() -> String {
+	r#"[
+]"#
+	.to_owned()
 }
 
 fn prepare_vk_json(protocol: &str, curve: &str) -> String {

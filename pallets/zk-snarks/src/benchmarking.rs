@@ -35,19 +35,27 @@ use crate::Pallet as ZKSnarks;
 benchmarks! {
 	setup_verification_benchmark {
 		let key: Vec<u8> = prepare_vk_json().as_bytes().into();
-
-	}: setup_verification(RawOrigin::None, 50, key)
+		let public_inputs: Vec<u8> = prepare_public_inputs_json().as_bytes().into();
+	}: setup_verification(RawOrigin::None, public_inputs, key)
 
 	verify_benchmark {
 		let key: Vec<u8> = prepare_vk_json().as_bytes().into();
 		let proof: Vec<u8> = prepare_proof_json().as_bytes().into();
-		ZKSnarks::<T>::setup_verification(RawOrigin::None.into(), 50, key).expect("This should work...");
+		let public_inputs: Vec<u8> = prepare_public_inputs_json().as_bytes().into();
+		ZKSnarks::<T>::setup_verification(RawOrigin::None.into(), public_inputs, key).expect("This should work...");
 	}: verify(RawOrigin::None, proof)
 
 	impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test)
 }
 
-pub fn prepare_vk_json() -> String {
+fn prepare_public_inputs_json() -> String {
+	r#"[
+ "33"
+]"#
+	.to_owned()
+}
+
+fn prepare_vk_json() -> String {
 	r#"{
  "protocol": "groth16",
  "curve": "bls12381",
