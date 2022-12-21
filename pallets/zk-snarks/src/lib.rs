@@ -56,6 +56,10 @@ type VerificationKey<T> = BoundedVec<u8, <T as Config>::MaxVerificationKeyLength
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+	use crate::{
+		deserialization::{Proof, VKey},
+		verify::{SUPPORTED_CURVE, SUPPORTED_PROTOCOL},
+	};
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
@@ -101,6 +105,14 @@ pub mod pallet {
 		ProofIsEmpty,
 		/// Verification key, not set.
 		VerificationKeyIsNotSet,
+		/// Malformed key
+		MalformedVerificationKey,
+		/// Malformed proof
+		MalformedProof,
+		/// Curve is not supported
+		NotSupportedCurve,
+		/// Protocol is not supported
+		NotSupportedProtocol,
 	}
 
 	/// Storing a public input.
@@ -126,16 +138,20 @@ pub mod pallet {
 		) -> DispatchResult {
 			// Setting the public input data.
 			PublicInputStorage::<T>::put(pub_input);
-
-			// Setting the verification key.
-			if vec_vk.is_empty() {
-				VerificationKeyStorage::<T>::kill();
-			} else {
-				let vk: VerificationKey<T> =
-					vec_vk.try_into().map_err(|_| Error::<T>::TooLongVerificationKey)?;
-				VerificationKeyStorage::<T>::put(vk);
-				Self::deposit_event(Event::<T>::VerificationSetupCompleted);
-			}
+			let vk: VerificationKey<T> =
+				vec_vk.try_into().map_err(|_| Error::<T>::TooLongVerificationKey)?;
+			let deserialized_vk = VKey::from_json_u8_slice(vk.as_slice())
+				.map_err(|_| Error::<T>::MalformedVerificationKey)?;
+			ensure!(
+				deserialized_vk.curve == SUPPORTED_CURVE.as_bytes(),
+				Error::<T>::NotSupportedCurve
+			);
+			ensure!(
+				deserialized_vk.protocol == SUPPORTED_PROTOCOL.as_bytes(),
+				Error::<T>::NotSupportedProtocol
+			);
+			VerificationKeyStorage::<T>::put(vk);
+			Self::deposit_event(Event::<T>::VerificationSetupCompleted);
 			Ok(())
 		}
 
@@ -144,6 +160,16 @@ pub mod pallet {
 		pub fn verify(_origin: OriginFor<T>, vec_proof: Vec<u8>) -> DispatchResult {
 			ensure!(!vec_proof.is_empty(), Error::<T>::ProofIsEmpty);
 			let proof: ProofDef<T> = vec_proof.try_into().map_err(|_| Error::<T>::TooLongProof)?;
+			let deserialized_proof = Proof::from_json_u8_slice(proof.as_slice())
+				.map_err(|_| Error::<T>::MalformedProof)?;
+			ensure!(
+				deserialized_proof.curve == SUPPORTED_CURVE.as_bytes(),
+				Error::<T>::NotSupportedCurve
+			);
+			ensure!(
+				deserialized_proof.protocol == SUPPORTED_PROTOCOL.as_bytes(),
+				Error::<T>::NotSupportedProtocol
+			);
 			ProofStorage::<T>::put(proof.clone());
 			Self::deposit_event(Event::<T>::VerificationProofSet);
 			Self::deposit_event(Event::<T>::VerificationSuccess);

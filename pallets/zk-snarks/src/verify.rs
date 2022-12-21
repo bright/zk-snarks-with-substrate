@@ -4,6 +4,9 @@ use group::{prime::PrimeCurveAffine, Curve};
 use pairing::{Engine, MultiMillerLoop};
 use sp_std::{ops::AddAssign, prelude::*};
 
+pub const SUPPORTED_CURVE: &str = "bls12381";
+pub const SUPPORTED_PROTOCOL: &str = "groth16";
+
 pub struct VerificationKey {
 	pub alpha: G1Affine,
 	pub beta: G2Affine,
