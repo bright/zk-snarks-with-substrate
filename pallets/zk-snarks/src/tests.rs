@@ -177,12 +177,12 @@ fn test_empty_proof() {
 }
 
 #[test]
-#[ignore]
-// todo: remove ignore once verify called with proper arguments
 fn test_verify_without_verification_key() {
+	let proof = prepare_proof_json("groth16", "bls12381", None);
+
 	new_test_ext().execute_with(|| {
 		assert_err!(
-			ZKSnarks::verify(RuntimeOrigin::none(), br#"1234567"#.to_vec()),
+			ZKSnarks::verify(RuntimeOrigin::none(), proof.as_bytes().into()),
 			Error::<Test>::VerificationKeyIsNotSet
 		);
 		assert_eq!(zk_events().len(), 0);
