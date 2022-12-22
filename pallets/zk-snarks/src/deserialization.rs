@@ -117,11 +117,11 @@ where
 	Ok(s.as_bytes().into())
 }
 
-pub fn deserialize_public_inputs(inputs: &[u8]) -> Result<Vec<u32>, ()> {
+pub fn deserialize_public_inputs(inputs: &[u8]) -> Result<Vec<u64>, ()> {
 	let inputs: Vec<&str> = serde_json::from_slice(inputs).unwrap();
-	let mut parsed_inputs: Vec<u32> = Vec::with_capacity(inputs.len());
+	let mut parsed_inputs: Vec<u64> = Vec::with_capacity(inputs.len());
 	for i in 0..inputs.len() {
-		match u32::from_str_radix(inputs[i], 10) {
+		match u64::from_str_radix(inputs[i], 10) {
 			Ok(n) => parsed_inputs.push(n),
 			Err(_) => return Err(()),
 		}

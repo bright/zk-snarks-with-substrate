@@ -59,7 +59,10 @@ pub mod pallet {
 	use super::*;
 	use crate::{
 		deserialization::{deserialize_public_inputs, Proof, VKey},
-		verify::{SUPPORTED_CURVE, SUPPORTED_PROTOCOL},
+		verify::{
+			prepare_public_inputs, verify, G1Bytes, G2Bytes, Proof as VProof, VerificationKey,
+			SUPPORTED_CURVE, SUPPORTED_PROTOCOL,
+		},
 	};
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
@@ -123,6 +126,12 @@ pub mod pallet {
 		NotSupportedCurve,
 		/// Protocol is not supported
 		NotSupportedProtocol,
+		/// There was error during proof verification
+		ProofVerificationError,
+		/// Proof creation error
+		ProofCreationError,
+		/// Verification Key creation error
+		VerificationKeyCreationError,
 	}
 
 	/// Storing a public input.
@@ -190,8 +199,50 @@ pub mod pallet {
 			);
 			ProofStorage::<T>::put(proof.clone());
 			Self::deposit_event(Event::<T>::VerificationProofSet);
-			Self::deposit_event(Event::<T>::VerificationSuccess);
-			Ok(())
+
+			let vk = VerificationKeyStorage::<T>::get();
+
+			let deserialized_vk = VKey::from_json_u8_slice(vk.as_slice())
+				.map_err(|_| Error::<T>::MalformedVerificationKey)?;
+
+			let public_inputs = PublicInputStorage::<T>::get();
+			let deserialized_public_inputs = deserialize_public_inputs(public_inputs.as_slice())
+				.map_err(|_| Error::<T>::MalformedPublicInputs)?;
+			let vk = prepare_verification_key(deserialized_vk)
+				.map_err(|_| Error::<T>::VerificationKeyCreationError)?;
+			let proof = VProof::from(
+				&G1Bytes::new(&deserialized_proof.a[0]),
+				&G2Bytes::new(&deserialized_proof.b[0][1], &deserialized_proof.b[0][0]),
+				&G1Bytes::new(&deserialized_proof.c[0]),
+			)
+			.map_err(|_| Error::<T>::ProofCreationError)?;
+
+			return match verify(vk, proof, prepare_public_inputs(deserialized_public_inputs)) {
+				Ok(true) => {
+					Self::deposit_event(Event::<T>::VerificationSuccess);
+					Ok(())
+				},
+				Ok(false) => {
+					Self::deposit_event(Event::<T>::VerificationFailed);
+					Ok(())
+				},
+				Err(_) => Err(Error::<T>::ProofVerificationError.into()),
+			}
 		}
+	}
+
+	fn prepare_verification_key(deserialized_vk: VKey) -> Result<VerificationKey, ()> {
+		let mut ic: Vec<G1Bytes> = Vec::with_capacity(deserialized_vk.ic.len());
+		for i in 0..deserialized_vk.ic.len() {
+			let g1_bytes = G1Bytes::new(&deserialized_vk.ic[i][0]);
+			ic.push(g1_bytes)
+		}
+		VerificationKey::from(
+			&G1Bytes::new(&deserialized_vk.alpha[0]),
+			&G2Bytes::new(&deserialized_vk.beta[0][1], &deserialized_vk.beta[0][0]),
+			&G2Bytes::new(&deserialized_vk.gamma[0][1], &deserialized_vk.gamma[0][0]),
+			&G2Bytes::new(&deserialized_vk.delta[0][1], &deserialized_vk.delta[0][0]),
+			&ic,
+		)
 	}
 }

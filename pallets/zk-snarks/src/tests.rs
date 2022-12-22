@@ -35,10 +35,10 @@ use frame_support::{assert_err, assert_ok};
 #[test]
 fn test_setup_verification() {
 	new_test_ext().execute_with(|| {
-		let vk = prepare_vk_json("groth16", "bls12381");
+		let vk = prepare_vk_json("groth16", "bls12381", None);
 		assert_ok!(ZKSnarks::setup_verification(
 			RuntimeOrigin::none(),
-			prepare_public_inputs_json().as_bytes().into(),
+			prepare_correct_public_inputs_json().as_bytes().into(),
 			vk.as_bytes().into()
 		));
 		let events = zk_events();
@@ -49,11 +49,11 @@ fn test_setup_verification() {
 #[test]
 fn test_not_supported_vk_curve() {
 	new_test_ext().execute_with(|| {
-		let vk = prepare_vk_json("groth16", "bn128");
+		let vk = prepare_vk_json("groth16", "bn128", None);
 		assert_err!(
 			ZKSnarks::setup_verification(
 				RuntimeOrigin::none(),
-				prepare_public_inputs_json().as_bytes().into(),
+				prepare_correct_public_inputs_json().as_bytes().into(),
 				vk.as_bytes().into()
 			),
 			Error::<Test>::NotSupportedCurve
@@ -66,11 +66,11 @@ fn test_not_supported_vk_curve() {
 #[test]
 fn test_not_supported_vk_protocol() {
 	new_test_ext().execute_with(|| {
-		let vk = prepare_vk_json("-", "bls12381");
+		let vk = prepare_vk_json("-", "bls12381", None);
 		assert_err!(
 			ZKSnarks::setup_verification(
 				RuntimeOrigin::none(),
-				prepare_public_inputs_json().as_bytes().into(),
+				prepare_correct_public_inputs_json().as_bytes().into(),
 				vk.as_bytes().into()
 			),
 			Error::<Test>::NotSupportedProtocol
@@ -86,7 +86,7 @@ fn test_too_long_verification_key() {
 		assert_err!(
 			ZKSnarks::setup_verification(
 				RuntimeOrigin::none(),
-				prepare_public_inputs_json().as_bytes().into(),
+				prepare_correct_public_inputs_json().as_bytes().into(),
 				vec![0; (<Test as Config>::MaxVerificationKeyLength::get() + 1) as usize]
 			),
 			Error::<Test>::TooLongVerificationKey
@@ -102,7 +102,7 @@ fn test_too_long_public_inputs() {
 			ZKSnarks::setup_verification(
 				RuntimeOrigin::none(),
 				vec![0; (<Test as Config>::MaxPublicInputsLength::get() + 1) as usize],
-				prepare_vk_json("groth16", "bls12381").as_bytes().into()
+				prepare_vk_json("groth16", "bls12381", None).as_bytes().into()
 			),
 			Error::<Test>::TooLongPublicInputs
 		);
@@ -116,8 +116,8 @@ fn test_public_inputs_mismatch() {
 		assert_err!(
 			ZKSnarks::setup_verification(
 				RuntimeOrigin::none(),
-				prepare_incorrect_public_inputs_json().as_bytes().into(),
-				prepare_vk_json("groth16", "bls12381").as_bytes().into()
+				prepare_empty_public_inputs_json().as_bytes().into(),
+				prepare_vk_json("groth16", "bls12381", None).as_bytes().into()
 			),
 			Error::<Test>::PublicInputsMismatch
 		);
@@ -141,7 +141,7 @@ fn test_too_long_proof() {
 
 #[test]
 fn test_not_supported_proof_protocol() {
-	let proof = prepare_proof_json("-", "bls12381");
+	let proof = prepare_proof_json("-", "bls12381", None);
 
 	new_test_ext().execute_with(|| {
 		assert_err!(
@@ -154,7 +154,7 @@ fn test_not_supported_proof_protocol() {
 
 #[test]
 fn test_not_supported_proof_curve() {
-	let proof = prepare_proof_json("groth16", "bn128");
+	let proof = prepare_proof_json("groth16", "bn128", None);
 
 	new_test_ext().execute_with(|| {
 		assert_err!(
@@ -190,34 +190,14 @@ fn test_verify_without_verification_key() {
 }
 
 #[test]
-#[ignore]
-// todo: remove ignore once verify called with proper arguments
-fn test_verification_failed() {
-	new_test_ext().execute_with(|| {
-		assert_ok!(ZKSnarks::setup_verification(
-			RuntimeOrigin::none(),
-			prepare_public_inputs_json().as_bytes().into(),
-			br#"1234567"#.to_vec()
-		));
-		assert_ok!(ZKSnarks::verify(RuntimeOrigin::none(), vec![0; 50]));
-
-		let events = zk_events();
-		assert_eq!(events.len(), 3);
-		assert_eq!(events[0], Event::<Test>::VerificationSetupCompleted);
-		assert_eq!(events[1], Event::<Test>::VerificationProofSet);
-		assert_eq!(events[2], Event::<Test>::VerificationFailed);
-	});
-}
-
-#[test]
 fn test_verification_success() {
 	new_test_ext().execute_with(|| {
-		let vk = prepare_vk_json("groth16", "bls12381");
-		let proof = prepare_proof_json("groth16", "bls12381");
+		let vk = prepare_vk_json("groth16", "bls12381", None);
+		let proof = prepare_proof_json("groth16", "bls12381", None);
 
 		assert_ok!(ZKSnarks::setup_verification(
 			RuntimeOrigin::none(),
-			prepare_public_inputs_json().as_bytes().into(),
+			prepare_correct_public_inputs_json().as_bytes().into(),
 			vk.as_bytes().into()
 		));
 		assert_ok!(ZKSnarks::verify(RuntimeOrigin::none(), proof.as_bytes().into()));
@@ -230,7 +210,72 @@ fn test_verification_success() {
 	});
 }
 
-fn prepare_public_inputs_json() -> String {
+#[test]
+fn test_verification_failed() {
+	new_test_ext().execute_with(|| {
+		let vk = prepare_vk_json("groth16", "bls12381", None);
+		let proof = prepare_proof_json("groth16", "bls12381", None);
+
+		assert_ok!(ZKSnarks::setup_verification(
+			RuntimeOrigin::none(),
+			prepare_incorrect_public_inputs_json().as_bytes().into(),
+			vk.as_bytes().into()
+		));
+		assert_ok!(ZKSnarks::verify(RuntimeOrigin::none(), proof.as_bytes().into()));
+
+		let events = zk_events();
+		assert_eq!(events.len(), 3);
+		assert_eq!(events[0], Event::<Test>::VerificationSetupCompleted);
+		assert_eq!(events[1], Event::<Test>::VerificationProofSet);
+		assert_eq!(events[2], Event::<Test>::VerificationFailed);
+	});
+}
+
+#[test]
+fn test_could_not_create_proof() {
+	new_test_ext().execute_with(|| {
+		let vk = prepare_vk_json("groth16", "bls12381", None);
+		let proof = prepare_proof_json("groth16", "bls12381", Some("12".to_owned()));
+
+		assert_ok!(ZKSnarks::setup_verification(
+			RuntimeOrigin::none(),
+			prepare_correct_public_inputs_json().as_bytes().into(),
+			vk.as_bytes().into()
+		));
+		assert_err!(
+			ZKSnarks::verify(RuntimeOrigin::none(), proof.as_bytes().into()),
+			Error::<Test>::ProofCreationError
+		);
+
+		let events = zk_events();
+		assert_eq!(events.len(), 1);
+		assert_eq!(events[0], Event::<Test>::VerificationSetupCompleted);
+	});
+}
+
+#[test]
+fn test_could_not_create_verification_key() {
+	new_test_ext().execute_with(|| {
+		let vk = prepare_vk_json("groth16", "bls12381", Some("12".to_owned()));
+		let proof = prepare_proof_json("groth16", "bls12381", None);
+
+		assert_ok!(ZKSnarks::setup_verification(
+			RuntimeOrigin::none(),
+			prepare_correct_public_inputs_json().as_bytes().into(),
+			vk.as_bytes().into()
+		));
+		assert_err!(
+			ZKSnarks::verify(RuntimeOrigin::none(), proof.as_bytes().into()),
+			Error::<Test>::VerificationKeyCreationError
+		);
+
+		let events = zk_events();
+		assert_eq!(events.len(), 1);
+		assert_eq!(events[0], Event::<Test>::VerificationSetupCompleted);
+	});
+}
+
+fn prepare_correct_public_inputs_json() -> String {
 	r#"[
  "33"
 ]"#
@@ -239,17 +284,25 @@ fn prepare_public_inputs_json() -> String {
 
 fn prepare_incorrect_public_inputs_json() -> String {
 	r#"[
+ "3"
 ]"#
 	.to_owned()
 }
 
-fn prepare_vk_json(protocol: &str, curve: &str) -> String {
+fn prepare_empty_public_inputs_json() -> String {
+	r#"[
+]"#
+	.to_owned()
+}
+
+fn prepare_vk_json(protocol: &str, curve: &str, alpha_x: Option<String>) -> String {
+	let alpha_x = alpha_x.unwrap_or_else(|| "2635983656263320256511463995836413167331869092392943593306076905516259749312747842295447349507189592731785901862558".to_owned());
 	let vk_template = r#"{
  "protocol": "<protocol>",
  "curve": "<curve>",
  "nPublic": 1,
  "vk_alpha_1": [
-  "2635983656263320256511463995836413167331869092392943593306076905516259749312747842295447349507189592731785901862558",
+  "<alpha_x>",
   "743892996456702519498029594549937288641619275055957975879157306988929970626325326222697609972550552691064908651931",
   "1"
  ],
@@ -338,13 +391,17 @@ fn prepare_vk_json(protocol: &str, curve: &str) -> String {
   ]
  ]
 }"#;
-	vk_template.replace("<protocol>", protocol).replace("<curve>", curve)
+	vk_template
+		.replace("<protocol>", protocol)
+		.replace("<curve>", curve)
+		.replace("<alpha_x>", &alpha_x)
 }
 
-fn prepare_proof_json(protocol: &str, curve: &str) -> String {
+fn prepare_proof_json(protocol: &str, curve: &str, pi_a_x: Option<String>) -> String {
+	let pi_a_x = pi_a_x.unwrap_or_else(|| "2820173869801000183955769496344276101575675010174203082588560105436284422640780128231242184109173767085197647834267".to_owned());
 	let proof_template = r#"{
  "pi_a": [
-  "2820173869801000183955769496344276101575675010174203082588560105436284422640780128231242184109173767085197647834267",
+  "<pi_a_x>",
   "1152541093585973172499551859168528642628429504007613830168996825879806250289422935864437193085184388469171892221011",
   "1"
  ],
@@ -371,5 +428,8 @@ fn prepare_proof_json(protocol: &str, curve: &str) -> String {
  "curve": "<curve>"
 }"#;
 
-	proof_template.replace("<protocol>", protocol).replace("<curve>", curve)
+	proof_template
+		.replace("<protocol>", protocol)
+		.replace("<curve>", curve)
+		.replace("<pi_a_x>", &pi_a_x)
 }
