@@ -26,7 +26,6 @@
 // IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-
 use serde::{Deserialize, Deserializer};
 use sp_std::vec::Vec;
 

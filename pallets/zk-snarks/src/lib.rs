@@ -26,7 +26,6 @@
 // IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(test)]
@@ -98,7 +97,7 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		VerificationSetupCompleted,
 		VerificationProofSet,
-		VerificationSuccess,
+		VerificationSuccess { who: T::AccountId },
 		VerificationFailed,
 	}
 
@@ -184,7 +183,7 @@ pub mod pallet {
 
 		/// Verify a proof.
 		#[pallet::weight(<T as Config>::WeightInfo::verify_benchmark(vec_proof.len()))]
-		pub fn verify(_origin: OriginFor<T>, vec_proof: Vec<u8>) -> DispatchResult {
+		pub fn verify(origin: OriginFor<T>, vec_proof: Vec<u8>) -> DispatchResult {
 			ensure!(!vec_proof.is_empty(), Error::<T>::ProofIsEmpty);
 			let proof: ProofDef<T> = vec_proof.try_into().map_err(|_| Error::<T>::TooLongProof)?;
 			let deserialized_proof = Proof::from_json_u8_slice(proof.as_slice())
@@ -223,9 +222,11 @@ pub mod pallet {
 			)
 			.map_err(|_| Error::<T>::ProofCreationError)?;
 
+			let sender = ensure_signed(origin)?;
+
 			return match verify(vk, proof, prepare_public_inputs(deserialized_public_inputs)) {
 				Ok(true) => {
-					Self::deposit_event(Event::<T>::VerificationSuccess);
+					Self::deposit_event(Event::<T>::VerificationSuccess { who: sender });
 					Ok(())
 				},
 				Ok(false) => {

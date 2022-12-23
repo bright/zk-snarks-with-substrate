@@ -32,6 +32,9 @@ use crate::{mock::*, *};
 
 use frame_support::{assert_err, assert_ok};
 
+const ALICE_ACCOUNT_ID: u64 = 2;
+const BOB_ACCOUNT_ID: u64 = 3;
+
 #[test]
 fn test_setup_verification() {
 	new_test_ext().execute_with(|| {
@@ -200,13 +203,16 @@ fn test_verification_success() {
 			prepare_correct_public_inputs_json().as_bytes().into(),
 			vk.as_bytes().into()
 		));
-		assert_ok!(ZKSnarks::verify(RuntimeOrigin::none(), proof.as_bytes().into()));
+		assert_ok!(ZKSnarks::verify(
+			RuntimeOrigin::signed(ALICE_ACCOUNT_ID),
+			proof.as_bytes().into()
+		));
 
 		let events = zk_events();
 		assert_eq!(events.len(), 3);
 		assert_eq!(events[0], Event::<Test>::VerificationSetupCompleted);
 		assert_eq!(events[1], Event::<Test>::VerificationProofSet);
-		assert_eq!(events[2], Event::<Test>::VerificationSuccess);
+		assert_eq!(events[2], Event::<Test>::VerificationSuccess { who: ALICE_ACCOUNT_ID });
 	});
 }
 
@@ -221,7 +227,10 @@ fn test_verification_failed() {
 			prepare_incorrect_public_inputs_json().as_bytes().into(),
 			vk.as_bytes().into()
 		));
-		assert_ok!(ZKSnarks::verify(RuntimeOrigin::none(), proof.as_bytes().into()));
+		assert_ok!(ZKSnarks::verify(
+			RuntimeOrigin::signed(BOB_ACCOUNT_ID),
+			proof.as_bytes().into()
+		));
 
 		let events = zk_events();
 		assert_eq!(events.len(), 3);

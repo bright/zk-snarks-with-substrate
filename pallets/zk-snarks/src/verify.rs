@@ -26,7 +26,6 @@
 // IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-
 use crate::verify::VerificationError::InvalidVerificationKey;
 use bls12_381::{Bls12, G1Affine, G2Affine, Scalar};
 use group::{prime::PrimeCurveAffine, Curve};
