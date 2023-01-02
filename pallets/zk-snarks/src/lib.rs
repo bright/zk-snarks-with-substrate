@@ -63,8 +63,16 @@ pub mod pallet {
 			Proof as VProof, VerificationKey, SUPPORTED_CURVE, SUPPORTED_PROTOCOL,
 		},
 	};
-	use frame_support::pallet_prelude::*;
+	use frame_support::{
+		pallet_prelude::*,
+		traits::{Currency, ExistenceRequirement},
+		PalletId,
+	};
 	use frame_system::pallet_prelude::*;
+	use sp_runtime::traits::AccountIdConversion;
+
+	type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
+	pub type BalanceOf<T> = <<T as Config>::Currency as Currency<AccountIdOf<T>>>::Balance;
 
 	const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
@@ -79,6 +87,11 @@ pub mod pallet {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		type WeightInfo: WeightInfo;
+
+		type Currency: Currency<Self::AccountId>;
+
+		#[pallet::constant]
+		type PalletId: Get<PalletId>;
 
 		#[pallet::constant]
 		type MaxPublicInputsLength: Get<u32>;
@@ -145,15 +158,31 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type VerificationKeyStorage<T: Config> = StorageValue<_, VerificationKeyDef<T>, ValueQuery>;
 
+	/// Storing a reward.
+	#[pallet::storage]
+	pub type RewardStorage<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
+
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Store a verification key.
 		#[pallet::weight(<T as Config>::WeightInfo::setup_verification_benchmark(vec_vk.len()))]
 		pub fn setup_verification(
-			_origin: OriginFor<T>,
+			origin: OriginFor<T>,
 			pub_input: Vec<u8>,
 			vec_vk: Vec<u8>,
+			reward: BalanceOf<T>,
 		) -> DispatchResult {
+			let sender = ensure_signed(origin)?;
+
+			// Deposit reward
+			T::Currency::transfer(
+				&sender,
+				&Self::account_id(),
+				reward,
+				ExistenceRequirement::AllowDeath,
+			)?;
+
+			RewardStorage::<T>::put(reward);
 			// Setting the public input data.
 			let public_inputs: PublicInputsDef<T> =
 				pub_input.try_into().map_err(|_| Error::<T>::TooLongPublicInputs)?;
@@ -183,7 +212,7 @@ pub mod pallet {
 
 		/// Verify a proof.
 		#[pallet::weight(<T as Config>::WeightInfo::verify_benchmark(vec_proof.len()))]
-		pub fn verify(_origin: OriginFor<T>, vec_proof: Vec<u8>) -> DispatchResult {
+		pub fn verify(origin: OriginFor<T>, vec_proof: Vec<u8>) -> DispatchResult {
 			ensure!(!vec_proof.is_empty(), Error::<T>::ProofIsEmpty);
 			let proof: ProofDef<T> = vec_proof.try_into().map_err(|_| Error::<T>::TooLongProof)?;
 			let deserialized_proof = Proof::from_json_u8_slice(proof.as_slice())
@@ -225,6 +254,17 @@ pub mod pallet {
 			return match verify(vk, proof, prepare_public_inputs(deserialized_public_inputs)) {
 				Ok(true) => {
 					Self::deposit_event(Event::<T>::VerificationSuccess);
+					let reward = RewardStorage::<T>::get();
+					let winner = ensure_signed(origin)?;
+
+					// Payout reward
+					T::Currency::transfer(
+						&Self::account_id(),
+						&winner,
+						reward,
+						ExistenceRequirement::AllowDeath,
+					)?;
+					RewardStorage::<T>::kill();
 					Ok(())
 				},
 				Ok(false) => {
@@ -265,5 +305,11 @@ pub mod pallet {
 			),
 			&ic,
 		)
+	}
+
+	impl<T: Config> Pallet<T> {
+		pub fn account_id() -> T::AccountId {
+			T::PalletId::get().into_account_truncating()
+		}
 	}
 }

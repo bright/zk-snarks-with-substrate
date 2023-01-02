@@ -34,6 +34,7 @@ use crate as pallet_zk_snarks;
 use frame_support::{
 	parameter_types,
 	traits::{ConstU32, ConstU64},
+	PalletId,
 };
 
 use sp_core::H256;
@@ -87,6 +88,7 @@ parameter_types! {
 	pub const MaxPublicInputsLength: u32 = 9;
 	pub const MaxVerificationKeyLength: u32 = 4078;
 	pub const MaxProofLength: u32 = 1113;
+	pub const ZkSnarksPalletId: PalletId = PalletId(*b"py/pallt");
 }
 
 impl pallet_zk_snarks::Config for Test {
@@ -95,6 +97,8 @@ impl pallet_zk_snarks::Config for Test {
 	type MaxVerificationKeyLength = MaxVerificationKeyLength;
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
+	type Currency = ();
+	type PalletId = ZkSnarksPalletId;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

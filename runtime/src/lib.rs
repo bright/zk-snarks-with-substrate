@@ -26,6 +26,7 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 // A few exports that help ease life for downstream crates.
+use frame_support::PalletId;
 pub use frame_support::{
 	construct_runtime, parameter_types,
 	traits::{
@@ -257,6 +258,7 @@ impl pallet_balances::Config for Runtime {
 
 parameter_types! {
 	pub FeeMultiplier: Multiplier = Multiplier::one();
+	pub ZkSnarksPalletId: PalletId = PalletId(*b"py/snark");
 }
 
 impl pallet_transaction_payment::Config for Runtime {
@@ -280,6 +282,8 @@ impl pallet_zk_snarks::Config for Runtime {
 	type MaxVerificationKeyLength = ConstU32<4078>;
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = pallet_zk_snarks::weights::SubstrateWeight<Runtime>;
+	type Currency = Balances;
+	type PalletId = ZkSnarksPalletId;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.

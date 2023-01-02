@@ -37,9 +37,10 @@ fn test_setup_verification() {
 	new_test_ext().execute_with(|| {
 		let vk = prepare_vk_json("groth16", "bls12381", None);
 		assert_ok!(ZKSnarks::setup_verification(
-			RuntimeOrigin::none(),
+			RuntimeOrigin::signed(1),
 			prepare_correct_public_inputs_json().as_bytes().into(),
-			vk.as_bytes().into()
+			vk.as_bytes().into(),
+			10000
 		));
 		let events = zk_events();
 		assert_eq!(events.len(), 1);
@@ -52,9 +53,10 @@ fn test_not_supported_vk_curve() {
 		let vk = prepare_vk_json("groth16", "bn128", None);
 		assert_err!(
 			ZKSnarks::setup_verification(
-				RuntimeOrigin::none(),
+				RuntimeOrigin::signed(1),
 				prepare_correct_public_inputs_json().as_bytes().into(),
-				vk.as_bytes().into()
+				vk.as_bytes().into(),
+				10000
 			),
 			Error::<Test>::NotSupportedCurve
 		);
@@ -69,9 +71,10 @@ fn test_not_supported_vk_protocol() {
 		let vk = prepare_vk_json("-", "bls12381", None);
 		assert_err!(
 			ZKSnarks::setup_verification(
-				RuntimeOrigin::none(),
+				RuntimeOrigin::signed(1),
 				prepare_correct_public_inputs_json().as_bytes().into(),
-				vk.as_bytes().into()
+				vk.as_bytes().into(),
+				10000
 			),
 			Error::<Test>::NotSupportedProtocol
 		);
@@ -85,9 +88,10 @@ fn test_too_long_verification_key() {
 	new_test_ext().execute_with(|| {
 		assert_err!(
 			ZKSnarks::setup_verification(
-				RuntimeOrigin::none(),
+				RuntimeOrigin::signed(1),
 				prepare_correct_public_inputs_json().as_bytes().into(),
-				vec![0; (<Test as Config>::MaxVerificationKeyLength::get() + 1) as usize]
+				vec![0; (<Test as Config>::MaxVerificationKeyLength::get() + 1) as usize],
+				10000
 			),
 			Error::<Test>::TooLongVerificationKey
 		);
@@ -100,9 +104,10 @@ fn test_too_long_public_inputs() {
 	new_test_ext().execute_with(|| {
 		assert_err!(
 			ZKSnarks::setup_verification(
-				RuntimeOrigin::none(),
+				RuntimeOrigin::signed(1),
 				vec![0; (<Test as Config>::MaxPublicInputsLength::get() + 1) as usize],
-				prepare_vk_json("groth16", "bls12381", None).as_bytes().into()
+				prepare_vk_json("groth16", "bls12381", None).as_bytes().into(),
+				10000
 			),
 			Error::<Test>::TooLongPublicInputs
 		);
@@ -115,9 +120,10 @@ fn test_public_inputs_mismatch() {
 	new_test_ext().execute_with(|| {
 		assert_err!(
 			ZKSnarks::setup_verification(
-				RuntimeOrigin::none(),
+				RuntimeOrigin::signed(1),
 				prepare_empty_public_inputs_json().as_bytes().into(),
-				prepare_vk_json("groth16", "bls12381", None).as_bytes().into()
+				prepare_vk_json("groth16", "bls12381", None).as_bytes().into(),
+				10000
 			),
 			Error::<Test>::PublicInputsMismatch
 		);
@@ -130,7 +136,7 @@ fn test_too_long_proof() {
 	new_test_ext().execute_with(|| {
 		assert_err!(
 			ZKSnarks::verify(
-				RuntimeOrigin::none(),
+				RuntimeOrigin::signed(1),
 				vec![0; (<Test as Config>::MaxProofLength::get() + 1) as usize]
 			),
 			Error::<Test>::TooLongProof
@@ -145,7 +151,7 @@ fn test_not_supported_proof_protocol() {
 
 	new_test_ext().execute_with(|| {
 		assert_err!(
-			ZKSnarks::verify(RuntimeOrigin::none(), proof.as_bytes().into()),
+			ZKSnarks::verify(RuntimeOrigin::signed(1), proof.as_bytes().into()),
 			Error::<Test>::NotSupportedProtocol
 		);
 		assert_eq!(zk_events().len(), 0);
@@ -158,7 +164,7 @@ fn test_not_supported_proof_curve() {
 
 	new_test_ext().execute_with(|| {
 		assert_err!(
-			ZKSnarks::verify(RuntimeOrigin::none(), proof.as_bytes().into()),
+			ZKSnarks::verify(RuntimeOrigin::signed(1), proof.as_bytes().into()),
 			Error::<Test>::NotSupportedCurve
 		);
 		assert_eq!(zk_events().len(), 0);
@@ -169,7 +175,7 @@ fn test_not_supported_proof_curve() {
 fn test_empty_proof() {
 	new_test_ext().execute_with(|| {
 		assert_err!(
-			ZKSnarks::verify(RuntimeOrigin::none(), Vec::new()),
+			ZKSnarks::verify(RuntimeOrigin::signed(1), Vec::new()),
 			Error::<Test>::ProofIsEmpty
 		);
 		assert_eq!(zk_events().len(), 0);
@@ -182,7 +188,7 @@ fn test_verify_without_verification_key() {
 
 	new_test_ext().execute_with(|| {
 		assert_err!(
-			ZKSnarks::verify(RuntimeOrigin::none(), proof.as_bytes().into()),
+			ZKSnarks::verify(RuntimeOrigin::signed(1), proof.as_bytes().into()),
 			Error::<Test>::VerificationKeyIsNotSet
 		);
 		assert_eq!(zk_events().len(), 0);
@@ -196,11 +202,12 @@ fn test_verification_success() {
 		let proof = prepare_proof_json("groth16", "bls12381", None);
 
 		assert_ok!(ZKSnarks::setup_verification(
-			RuntimeOrigin::none(),
+			RuntimeOrigin::signed(1),
 			prepare_correct_public_inputs_json().as_bytes().into(),
-			vk.as_bytes().into()
+			vk.as_bytes().into(),
+			10000
 		));
-		assert_ok!(ZKSnarks::verify(RuntimeOrigin::none(), proof.as_bytes().into()));
+		assert_ok!(ZKSnarks::verify(RuntimeOrigin::signed(1), proof.as_bytes().into()));
 
 		let events = zk_events();
 		assert_eq!(events.len(), 3);
@@ -217,11 +224,12 @@ fn test_verification_failed() {
 		let proof = prepare_proof_json("groth16", "bls12381", None);
 
 		assert_ok!(ZKSnarks::setup_verification(
-			RuntimeOrigin::none(),
+			RuntimeOrigin::signed(1),
 			prepare_incorrect_public_inputs_json().as_bytes().into(),
-			vk.as_bytes().into()
+			vk.as_bytes().into(),
+			10000
 		));
-		assert_ok!(ZKSnarks::verify(RuntimeOrigin::none(), proof.as_bytes().into()));
+		assert_ok!(ZKSnarks::verify(RuntimeOrigin::signed(1), proof.as_bytes().into()));
 
 		let events = zk_events();
 		assert_eq!(events.len(), 3);
@@ -238,12 +246,13 @@ fn test_could_not_create_proof() {
 		let proof = prepare_proof_json("groth16", "bls12381", Some("12".to_owned()));
 
 		assert_ok!(ZKSnarks::setup_verification(
-			RuntimeOrigin::none(),
+			RuntimeOrigin::signed(1),
 			prepare_correct_public_inputs_json().as_bytes().into(),
-			vk.as_bytes().into()
+			vk.as_bytes().into(),
+			10000
 		));
 		assert_err!(
-			ZKSnarks::verify(RuntimeOrigin::none(), proof.as_bytes().into()),
+			ZKSnarks::verify(RuntimeOrigin::signed(1), proof.as_bytes().into()),
 			Error::<Test>::ProofCreationError
 		);
 
@@ -260,12 +269,13 @@ fn test_could_not_create_verification_key() {
 		let proof = prepare_proof_json("groth16", "bls12381", None);
 
 		assert_ok!(ZKSnarks::setup_verification(
-			RuntimeOrigin::none(),
+			RuntimeOrigin::signed(1),
 			prepare_correct_public_inputs_json().as_bytes().into(),
-			vk.as_bytes().into()
+			vk.as_bytes().into(),
+			10000
 		));
 		assert_err!(
-			ZKSnarks::verify(RuntimeOrigin::none(), proof.as_bytes().into()),
+			ZKSnarks::verify(RuntimeOrigin::signed(1), proof.as_bytes().into()),
 			Error::<Test>::VerificationKeyCreationError
 		);
 
