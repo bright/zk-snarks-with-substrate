@@ -144,8 +144,8 @@ pub mod pallet {
             ProofStorage::<T>::put(proof.clone());
             Self::deposit_event(Event::<T>::VerificationProofSet);
 
-            let v = Verifier { key: <VerificationKeyStorage<T>>::get().clone().into_inner() };
-            if v.verify_proof(PublicInputStorage::<T>::get().clone(), proof.into_inner())
+            let v = Verifier { key: <VerificationKeyStorage<T>>::get().into_inner() };
+            if v.verify_proof(PublicInputStorage::<T>::get(), proof.into_inner())
                 .map_err(|_| Error::<T>::VerificationKeyIsNotSet)?
             {
                 Self::deposit_event(Event::<T>::VerificationSuccess);
