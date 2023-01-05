@@ -19,7 +19,7 @@ From the high-level point of view, the concept defines:
 
 <center>
     
-![alt zk-snark concept!](https://i.imgur.com/8H5rSW2.png "Concept diagram")
+![alt zk-snark concept!](https://github.com/bright/zk-snarks-with-substrate/blob/M1/blog/img/concept_diagram.png "Concept diagram")
 
 </center>
 
@@ -47,7 +47,7 @@ Now together with Alice we will try to explain the process of converting the equ
 * R1CS (*Rank-1 Constraint System*)
 * QAP (*Quadratic Arithmetic Program*)
 
-We are going to describe them in the next part of this article. Alice is going to use two external tools [Cricom](https://docs.circom.io/getting-started/installation/) and [SnarkJS](https://github.com/iden3/snarkjs). Circom is a compiler written in Rust for creating circuits. SnarkJS is a npm package, which implements generation and validation of the zk-SNAKRs for the artifacts produced by Circom. For the installation process, please check our [documentation](https://github.com/bright/zk-snarks-with-substrate/blob/main/circom/README.md) in the repository.
+We are going to describe them in the next part of this article. Alice is going to use two external tools [Cricom](https://docs.circom.io/getting-started/installation/) and [SnarkJS](https://github.com/iden3/snarkjs). Circom is a compiler written in Rust for creating circuits. SnarkJS is a npm package, which implements generation and validation of the zk-SNAKRs for the artifacts produced by Circom. For the installation process, please check our [documentation](https://github.com/bright/zk-snarks-with-substrate/blob/M1/circom/README.md) in the repository.
 
 
 ## Computation statement
@@ -148,7 +148,7 @@ $$a_{i}\cdot s * b_{i}\cdot s - c_{i}\cdot s = 3*3 -9 = 0$$
 
 </center>
 
-As you can see the computations are fine, so R1CS for circuit one is ok. Alice will now use a *Cricom* for generating a R1CS. First she need to creates a *Cricom* template file (*[task.cricom](https://github.com/bright/zk-snarks-with-substrate/blob/main/circom/task.circom)*) which defines a constraints for our code:
+As you can see the computations are fine, so R1CS for circuit one is ok. Alice will now use a *Cricom* for generating a R1CS. First she need to creates a *Cricom* template file (*[task.cricom](https://github.com/bright/zk-snarks-with-substrate/blob/M1/circom/task.circom)*) which defines a constraints for our code:
 
 ```
 pragma circom 2.0.0;

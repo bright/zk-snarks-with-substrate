@@ -25,7 +25,7 @@ Then navigate to `Extrinsics` panel (*Developer -> Extrinsics*).
 
 <center>
     
-![Extrinsics](https:///https://github.com/bright/zk-snarks-with-substrate/pallets/zk-snarks/sample/panel.png)
+![Extrinsics](https://github.com/bright/zk-snarks-with-substrate/blob/M1/pallets/zk-snarks/sample/panel.png)
     
 </center> 
 
@@ -33,7 +33,7 @@ In the field `submit the following extrinsic`, please select `zkSnarks`. Fill in
 
 <center>
     
-![Setup Verification](https:///https://github.com/bright/zk-snarks-with-substrate/pallets/zk-snarks/sample/vk.png)
+![Setup Verification](https://github.com/bright/zk-snarks-with-substrate/blob/M1/pallets/zk-snarks/sample/vk.png)
     
 </center> 
 
@@ -41,7 +41,7 @@ To upload data on blockchain, please press the `Submit Transaction`. Next, we wi
 
 <center>
     
-![Verify](https:///https://github.com/bright/zk-snarks-with-substrate/pallets/zk-snarks/sample/proof.png)
+![Verify](https://github.com/bright/zk-snarks-with-substrate/blob/M1/pallets/zk-snarks/sample/proof.png)
     
 </center> 
 
@@ -49,7 +49,7 @@ Finally, we should get the result:
 
 <center>
     
-![Result](https:///https://github.com/bright/zk-snarks-with-substrate/pallets/zk-snarks/sample/result.png)
+![Result](https://github.com/bright/zk-snarks-with-substrate/blob/M1/pallets/zk-snarks/sample/result.png)
     
 </center> 
 
