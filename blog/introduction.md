@@ -2,7 +2,7 @@
 
 **In this article I would like to introduce you with the zk-SNARKs (zero-knowledge succinct non-interactive argument of knowledge) concept. First we are going to briefly describe what are the zero-knowledge proofs, what are the stages of creating them, which tools can be useful for generating the zk-SNARKs. Also, we will touch a little math behind them. I encourage you to visit our GitHub, where you can find a [repository](https://github.com/bright/zk-snarks-with-substrate) for this article. Let’s start with the definition of the zero-knowledge proof and then we will move to the zk-SNARKs.**
 
-Zero-knowledge proof is a method where one party (the prover) tries to “*convince*” the other party (the verifier) that a given statement is true, without revealing the solution. There are two types of proving systems:
+Zero-knowledge proof is a method where one party (the prover) tries to “*convince*” the other party (the verifier) that a given statement is true, without revealing the solution [^6]. There are two types of proving systems[^2]:
 * **interactive** - where the prover and verifier exchange multiple messages with each other, until the verifier is convinced enough that the prover knows the given statement is true.
 * **non-interactive** - where the prover creates a proof and the verifier is able to run it and check if the given statement is true. Compared to the interactive version, there is only one message (proof) that is sent to the verifier and it can be run asynchronously.
 
@@ -19,13 +19,13 @@ From the high-level point of view, the concept defines:
 
 <center>
     
-![alt zk-snark concept!](https://i.imgur.com/8H5rSW2.png "Concept diagram")
+![alt zk-snark concept!](https://github.com/bright/zk-snarks-with-substrate/blob/M1/blog/img/concept_diagram.png "Concept diagram")
 
 </center>
 
 As shown on the image, the prover will create a proof, based on the public and private inputs. Verifier will receive it and run the verification knowing only the public inputs. Based on that we can conclude that proof will need somehow to wrap our problem and the private inputs. Then it will need to transform them to the other form which could be verified only with the public inputs. Now when we know the concept, we can dive deeper and look at this process in detail.
 
-First let’s think about the problems which zk-SNARKs can solve. There are two types of problems P(*deterministic polynomial*) and NP (*nondeterministic polynomial*). The first ones are the problems that can be run in polynomial time and those are not applicable for the zk-SNARKs. The second ones are the problems, which can only be verified in polynomial time. In other words, finding the right solution for an NP problem is very hard, but verifying an already existing one is quite easy. This is exactly what zk-SNARKs is about, but first our problem will need to be transformed to proper form, which is a QAP (Quadratic Arithmetic Program). This is actually a process where we transform a code into a mathematical representation of it.
+First let’s think about the problems which zk-SNARKs can solve. There are two types of problems P(*deterministic polynomial*) and NP (*nondeterministic polynomial*)[^5]. The first ones are the problems that can be run in polynomial time and those are not applicable for the zk-SNARKs[^4]. The second ones are the problems, which can only be verified in polynomial time. In other words, finding the right solution for an NP problem is very hard, but verifying an already existing one is quite easy. This is exactly what zk-SNARKs is about. First, our problem will need to be written as a code and then transformed into the proper form, which is a Quadratic Arithmetic Program (QAP)[^1]. Transformation allows us to convert code into a mathematical representation of it. In the next parts of this article, we take a closer look at this process.
 
 If we want to go further, we will need to have a suitable example, which helps us in better understanding the concept of zk-SNARKs. **Let’s assume that Bob is a founder of the Bright Coders union**. In front of his mates, he announces that there are few places left in the union and **those who solve this equation first:
 
@@ -44,10 +44,10 @@ If we take a closer look at the equation and set it together with what we alread
 Now together with Alice we will try to explain the process of converting the equation above into the zk-SNARK. The process takes a couple of stages:
 * Computation statement
 * Flattening
-* R1CS
-* QAP
+* R1CS (*Rank-1 Constraint System*)
+* QAP (*Quadratic Arithmetic Program*)
 
-We are going to describe them in the next part of this article. Alice is going to use two external tools [Cricom](https://docs.circom.io/getting-started/installation/) and [SnarkJS](https://github.com/iden3/snarkjs). Circom is a compiler written in Rust for creating circuits. SnarkJS is a npm package, which implements generation and validation of the zk-SNAKRs for the artifacts produced by Circom. For the installation process, please check our [documentation](https://github.com/bright/zk-snarks-with-substrate/blob/main/circom/README.md) in the repository.
+We are going to describe them in the next part of this article. Alice is going to use two external tools [Cricom](https://docs.circom.io/getting-started/installation/) and [SnarkJS](https://github.com/iden3/snarkjs). Circom is a compiler written in Rust for creating circuits. SnarkJS is a npm package, which implements generation and validation of the zk-SNAKRs for the artifacts produced by Circom. For the installation process, please check our [documentation](https://github.com/bright/zk-snarks-with-substrate/blob/M1/circom/README.md) in the repository.
 
 
 ## Computation statement
@@ -62,11 +62,11 @@ by using it, she can easily verify if value "*3*" is the right answer for our eq
 * Alice will need to reveal the value of the “*x*” variable to Bob, which she doesn’t want to.
 * Bob will not be sure if Alice's program is the correct one. For example her program could just return “*12*”, without doing any computations.
 
-Solving those problems can be done by converting this program to QAP (*Quadratic Arithmetic Program*) and adding some cryptography. This is what we are going to do next steps.
+Solving those problems can be done by converting this program to QAP and adding some cryptography. This is what we are going to do next steps.
 
 ## Flattening
 
-We need to convert our computation statement to a few smaller ones which have one of two forms:
+We need to convert our computation statement to a few smaller ones which have one of two forms[^1]:
 
 * Assignment to the variable or constants ($x=y$, where “*y*” be a variable or a constant)
 * Assignment to the combination of operators ($x=y (op) z$ , where “*op” is one of the $(+,-,*,/)$ and “*y*” and “*z*” can be variables or constants).
@@ -83,7 +83,7 @@ fn solution(x: i32) -> i32 {
 
 ## Rank-1 Constraint System
 
-Next step is to convert our circuits to a R1CS (*rank-1 constraint system*), which is a list of three vectors $a,b,c$ and a solution to R1CS which is a vector $s$, such that:
+Next step is to convert our circuits to a R1CS (*rank-1 constraint system*), which is a list of three vectors $a,b,c$ and a solution to R1CS which is a vector $s$, such that[^2]:
 
 <center>
 
@@ -148,7 +148,7 @@ $$a_{i}\cdot s * b_{i}\cdot s - c_{i}\cdot s = 3*3 -9 = 0$$
 
 </center>
 
-As you can see the computations are fine, so R1CS for circuit one is ok. Alice will now use a *Cricom* for generating a R1CS. First she need to creates a *Cricom* template file (*task.cricom*) which defines a constraints for our code:
+As you can see the computations are fine, so R1CS for circuit one is ok. Alice will now use a *Cricom* for generating a R1CS. First she need to creates a *Cricom* template file (*[task.cricom](https://github.com/bright/zk-snarks-with-substrate/blob/M1/circom/task.circom)*) which defines a constraints for our code:
 
 ```
 pragma circom 2.0.0;
@@ -165,18 +165,24 @@ component main = Task();
 
 Than she can generate R1CS by running the command:
 
-`circom task.circom --r1cs --wasm --sym --c --o build --O0 --p bls12381`
+```
+mkdir build
+circom task.circom --r1cs --wasm --sym -o build --O0 -p bls12381
+```
 
-This will generate a file (*task.r1cs*) which describes a R1CS in the *Cricom*. After that Alice will need to create a witness (vector $s$) file, but this time she will use a *SnarkJS* tool for doing this. First she needs to create a json file which will describe all private inputs in our circuits. In our case this is a very simple task, because our only input value is $x$ which is “*3*”. Input file (*input.json*) will look like this:
+This will generate a file (*build/task.r1cs*), which describes a R1CS in the *Cricom* and (*build/task.wasm*), which compiles circuit to WebAssembly. After that Alice will need to create a witness (vector $s$) file, but this time she will use a *SnarkJS* tool for doing this. First she needs to create a json file which will describe all private inputs in our circuits. In our case this is a very simple task, because our only input value is $x$ which is “*3*”. Input file (*input.json*) will look like this:
 
 ```
 {"x": "3"}
 ```
 
-Than she can generate a witness:
-`node generate_witness.js task.wasm ../../input.json witness.wtns`
+Than she can generate a witness file (*build/witness.wtns*):
+```
+cd build/task_js
+node generate_witness.js task.wasm ../../input.json witness.wtns
+```
 
-Alice can also verify the result, by exporting witness to json:
+Alice can also verify the result, by exporting witness to json (*build/witness.json*):
 
 `snarkjs wtns export json witness.wtns witness.json`
 
@@ -193,7 +199,7 @@ As you can see, the result is exactly the same as it were for our witness from t
 
 ## Quadratic Arithmetic Program
 
-The last step is to convert a R1CS to QAP, which will allow us to transform R1CS vectors to the polynomials. The logic behind the equation will still be the same, but instead of using vectors with a dot product we will use polynomials. We can start with the declaration of the polynomials $A_{i}(x)$, $B_{i}(x)$ and $C_{i}(x)$ for $i$ in $[1,N]$, where the $N$ is a number of variables for our constraints (in our case it will be 4). Than we can create a set of points for $A_{i}(n)=a_{n}(i)$ and similar for $B_{i}(n)$ and $C_{i}(n)$. Based on those points, we can create polynomials by using a [Lagrange interpolation](https://en.wikipedia.org/wiki/Lagrange_polynomial). As a result we will get a set of polynomials which can be then written in the equation:
+The last step is to convert a R1CS to QAP, which will allow us to transform R1CS vectors to the polynomials. The logic behind the equation will still be the same, but instead of using vectors with a dot product we will use polynomials[^3]. We can start with the declaration of the polynomials $A_{i}(x)$, $B_{i}(x)$ and $C_{i}(x)$ for $i$ in $[1,N]$, where the $N$ is a number of variables for our constraints (in our case it will be 4). Than we can create a set of points for $A_{i}(n)=a_{n}(i)$ and similar for $B_{i}(n)$ and $C_{i}(n)$. Based on those points, we can create polynomials by using a [Lagrange interpolation](https://en.wikipedia.org/wiki/Lagrange_polynomial). As a result we will get a set of polynomials which can be then written in the equation:
 
 <center>
 
@@ -216,7 +222,7 @@ $$ P(X)=A(X)*B(X)-C(X)=0 $$
 
 </center>
 
-From the [polynomial long division](https://en.wikipedia.org/wiki/Polynomial_long_division), we can deduce that above equation will only hold, if $P(X)$ will be divided by the $Z(X)=(x-x_{1})*(x-x_{2})...(x-x_{n})$ without a reminder. Our formula can be written like this:
+From the [polynomial long division](https://en.wikipedia.org/wiki/Polynomial_long_division), we can deduce that above equation will only hold, if $P(X)$ will be divided by the $Z(X)=(x-x_{1})*(x-x_{2})...(x-x_{n})$ without a reminder. Our formula can be written like this[^7]:
 
 <center>
 
@@ -230,12 +236,12 @@ Alice knows the witness and she’s able to compute $H(X)$. By expressing comput
 
 ## Summary
 
-At this point we are going to stop. What we already learned is what the zk-SNARKs are and how we can use tools like *Circom* and *SnarkJS* in creating them. In the next post, we will take a closer look at the *Groth16*, which is a cryptography proof system that will allow us to finish the Alice task. For more information I encourage you to check our links.
+At this point we are going to stop. What we already learned is what the zk-SNARKs are and how we can use tools like *Circom* and *SnarkJS* in creating them. In the next post, we will take a closer look at the *Groth16*, which is a cryptography proof system that will allow us to finish the Alice task. We will use artifacts (*witness.wtns, input.json*) created in this tutorial, to generate a proof and verify it using *SnarkJS*.
 
-### Links
-
-* https://medium.com/@VitalikButerin/quadratic-arithmetic-programs-from-zero-to-hero-f6d558cea649
-* https://blog.decentriq.com/zk-snarks-primer-part-one/
-* https://vitalik.ca/general/2021/01/26/snarks.html
-* https://xord.com/research/explaining-quadratic-arithmetic-programs/
-* https://www.zeroknowledgeblog.com/index.php/zk-snarks
+[^1]: https://medium.com/@VitalikButerin/quadratic-arithmetic-programs-from-zero-to-hero-f6d558cea649
+[^2]: https://blog.decentriq.com/zk-snarks-primer-part-one/
+[^3]: https://vitalik.ca/general/2021/01/26/snarks.html
+[^4]: https://xord.com/research/explaining-quadratic-arithmetic-programs/
+[^5]: https://www.zeroknowledgeblog.com/index.php/the-pinocchio-protocol/computation
+[^6]: https://fisher.wharton.upenn.edu/wp-content/uploads/2020/09/Thesis_Terrence-Jo.pdf
+[^7]: https://www.zeroknowledgeblog.com/index.php/the-pinocchio-protocol/qap
