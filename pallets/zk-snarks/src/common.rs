@@ -1,6 +1,6 @@
 use crate::{
 	deserialization::{Proof, VKey},
-	verify::{G1UncompressedBytes, G2UncompressedBytes, Proof as VProof, VerificationKey},
+	verify::{G1UncompressedBytes, G2UncompressedBytes, GProof, VerificationKey},
 };
 use sp_std::vec::Vec;
 
@@ -34,8 +34,8 @@ pub fn prepare_verification_key(deserialized_vk: VKey) -> Result<VerificationKey
 	)
 }
 
-pub fn prepare_proof(proof: Proof) -> Result<VProof, ()> {
-	VProof::from_uncompressed(
+pub fn prepare_proof(proof: Proof) -> Result<GProof, ()> {
+	GProof::from_uncompressed(
 		&G1UncompressedBytes::new(proof.a[0], proof.a[1]),
 		&G2UncompressedBytes::new(proof.b[0][0], proof.b[0][1], proof.b[1][0], proof.b[1][1]),
 		&G1UncompressedBytes::new(proof.c[0], proof.c[1]),
