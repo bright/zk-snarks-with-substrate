@@ -139,13 +139,13 @@ impl VerificationKey {
 }
 
 /// Represents Groth16 proof
-pub struct Proof {
+pub struct GProof {
 	pub a: G1Affine,
 	pub b: G2Affine,
 	pub c: G1Affine,
 }
 
-impl Proof {
+impl GProof {
 	pub fn from_uncompressed(
 		a: &G1UncompressedBytes,
 		b: &G2UncompressedBytes,
@@ -155,7 +155,7 @@ impl Proof {
 		let b = b.try_into()?;
 		let c = c.try_into()?;
 
-		Ok(Proof { a, b, c })
+		Ok(GProof { a, b, c })
 	}
 }
 
@@ -174,7 +174,7 @@ pub fn prepare_public_inputs(inputs: Vec<u64>) -> Vec<Scalar> {
 }
 
 /// Verifies given proof with given verification key and public inputs
-pub fn verify(vk: VerificationKey, proof: Proof, inputs: PublicInputs) -> VerificationResult {
+pub fn verify(vk: VerificationKey, proof: GProof, inputs: PublicInputs) -> VerificationResult {
 	let public_inputs: &[<Bls12 as Engine>::Fr] = &inputs;
 
 	if (public_inputs.len() + 1) != vk.ic.len() {
@@ -210,7 +210,8 @@ pub fn verify(vk: VerificationKey, proof: Proof, inputs: PublicInputs) -> Verifi
 #[cfg(test)]
 mod tests {
 	use crate::verify::{
-		verify, G1UncompressedBytes, G2UncompressedBytes, Proof, VerificationError, VerificationKey,
+		verify, G1UncompressedBytes, G2UncompressedBytes, GProof, VerificationError,
+		VerificationKey,
 	};
 	use bls12_381::{G1Affine, G2Affine};
 
@@ -288,7 +289,7 @@ mod tests {
 
 	#[test]
 	fn proof_from_correct_coordinates_is_ok() {
-		let proof = Proof::from_uncompressed(
+		let proof = GProof::from_uncompressed(
 			&G1UncompressedBytes::new(from_dec_string(PI_A_X), from_dec_string(PI_A_Y)),
 			&G2UncompressedBytes::new(
 				from_dec_string(PI_B_X_C0),
@@ -372,7 +373,7 @@ mod tests {
 		//----------VERIFICATION---------------//
 		assert!(verify(
 			VerificationKey { alpha, beta, gamma, delta, ic: vec![ic_1, ic_2] },
-			Proof { a: pi_a, b: pi_b, c: pi_c },
+			GProof { a: pi_a, b: pi_b, c: pi_c },
 			// blog/data/public.json
 			[12.into()].into(),
 		)
@@ -449,7 +450,7 @@ mod tests {
 		//----------VERIFICATION---------------//
 		assert!(!verify(
 			VerificationKey { alpha, beta, gamma, delta, ic: vec![ic_1, ic_2] },
-			Proof { a: pi_a, b: pi_b, c: pi_c },
+			GProof { a: pi_a, b: pi_b, c: pi_c },
 			[33.into()].into(),
 		)
 		.unwrap())
@@ -522,7 +523,7 @@ mod tests {
 		assert_eq!(
 			verify(
 				VerificationKey { alpha, beta, gamma, delta, ic: vec![ic_1] },
-				Proof { a: pi_a, b: pi_b, c: pi_c },
+				GProof { a: pi_a, b: pi_b, c: pi_c },
 				[33.into()].into(),
 			)
 			.err()
