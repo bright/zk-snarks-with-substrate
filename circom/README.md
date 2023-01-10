@@ -24,3 +24,31 @@ will generate a `witness.wtns` file. We can now verify how our witness look like
 ```
 snarkjs wtns export json witness.wtns witness.json
 ```
+
+## Create a proof
+
+
+#### Powers of Tau
+This part is circuit independent.
+```
+snarkjs powersoftau new bls12381 12 pot12_0000.ptau -v
+snarkjs powersoftau contribute pot12_0000.ptau pot12_0001.ptau --name="First contribution" -v
+```
+
+#### Phase 2
+```
+snarkjs powersoftau prepare phase2 pot12_0001.ptau pot12_final.ptau -v
+snarkjs groth16 setup ../task.r1cs pot12_final.ptau task_0000.zkey
+snarkjs zkey contribute task_0000.zkey task_0001.zkey --name="1st Contributor Name" -v
+snarkjs zkey export verificationkey task_0001.zkey verification_key.json
+```
+
+#### Generating a Proof
+```
+snarkjs groth16 prove task_0001.zkey witness.wtns proof.json public.json
+```
+
+## Verifying a Proof
+```
+snarkjs groth16 verify verification_key.json public.json proof.json
+```

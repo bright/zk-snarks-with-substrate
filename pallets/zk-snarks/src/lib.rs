@@ -26,7 +26,6 @@
 // IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(test)]
@@ -61,7 +60,7 @@ pub mod pallet {
 		deserialization::{deserialize_public_inputs, Proof, VKey},
 		verify::{
 			prepare_public_inputs, verify, G1UncompressedBytes, G2UncompressedBytes,
-			Proof as VProof, VerificationKey, SUPPORTED_CURVE, SUPPORTED_PROTOCOL,
+			GProof, VerificationKey, SUPPORTED_CURVE, SUPPORTED_PROTOCOL,
 		},
 	};
 	use frame_support::pallet_prelude::*;
@@ -98,7 +97,7 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		VerificationSetupCompleted,
 		VerificationProofSet,
-		VerificationSuccess,
+		VerificationSuccess { who: T::AccountId },
 		VerificationFailed,
 	}
 
@@ -155,77 +154,26 @@ pub mod pallet {
 			pub_input: Vec<u8>,
 			vec_vk: Vec<u8>,
 		) -> DispatchResult {
-			// Setting the public input data.
-			let public_inputs: PublicInputsDef<T> =
-				pub_input.try_into().map_err(|_| Error::<T>::TooLongPublicInputs)?;
-			let deserialized_public_inputs = deserialize_public_inputs(public_inputs.as_slice())
-				.map_err(|_| Error::<T>::MalformedPublicInputs)?;
-			PublicInputStorage::<T>::put(public_inputs);
-			let vk: VerificationKeyDef<T> =
-				vec_vk.try_into().map_err(|_| Error::<T>::TooLongVerificationKey)?;
-			let deserialized_vk = VKey::from_json_u8_slice(vk.as_slice())
-				.map_err(|_| Error::<T>::MalformedVerificationKey)?;
-			ensure!(
-				deserialized_vk.curve == SUPPORTED_CURVE.as_bytes(),
-				Error::<T>::NotSupportedCurve
-			);
-			ensure!(
-				deserialized_vk.protocol == SUPPORTED_PROTOCOL.as_bytes(),
-				Error::<T>::NotSupportedProtocol
-			);
-			ensure!(
-				deserialized_vk.public_inputs_len == deserialized_public_inputs.len() as u8,
-				Error::<T>::PublicInputsMismatch
-			);
-			VerificationKeyStorage::<T>::put(vk);
+			let inputs = store_public_inputs::<T>(pub_input)?;
+			let vk = store_verification_key::<T>(vec_vk)?;
+			ensure!(vk.public_inputs_len == inputs.len() as u8, Error::<T>::PublicInputsMismatch);
 			Self::deposit_event(Event::<T>::VerificationSetupCompleted);
 			Ok(())
 		}
 
 		/// Verify a proof.
 		#[pallet::weight(<T as Config>::WeightInfo::verify_benchmark(vec_proof.len()))]
-		pub fn verify(_origin: OriginFor<T>, vec_proof: Vec<u8>) -> DispatchResult {
-			ensure!(!vec_proof.is_empty(), Error::<T>::ProofIsEmpty);
-			let proof: ProofDef<T> = vec_proof.try_into().map_err(|_| Error::<T>::TooLongProof)?;
-			let deserialized_proof = Proof::from_json_u8_slice(proof.as_slice())
-				.map_err(|_| Error::<T>::MalformedProof)?;
-			ensure!(
-				deserialized_proof.curve == SUPPORTED_CURVE.as_bytes(),
-				Error::<T>::NotSupportedCurve
-			);
-			ensure!(
-				deserialized_proof.protocol == SUPPORTED_PROTOCOL.as_bytes(),
-				Error::<T>::NotSupportedProtocol
-			);
-			ProofStorage::<T>::put(proof.clone());
-			Self::deposit_event(Event::<T>::VerificationProofSet);
+		pub fn verify(origin: OriginFor<T>, vec_proof: Vec<u8>) -> DispatchResult {
+			let sender = ensure_signed(origin)?;
+			let vk = get_verification_key::<T>()?;
+			let inputs = get_public_inputs::<T>()?;
+            
+			let proof = store_proof::<T>(vec_proof)?;
+            Self::deposit_event(Event::<T>::VerificationProofSet);
 
-			let vk = VerificationKeyStorage::<T>::get();
-
-			ensure!(!vk.is_empty(), Error::<T>::VerificationKeyIsNotSet);
-			let deserialized_vk = VKey::from_json_u8_slice(vk.as_slice())
-				.map_err(|_| Error::<T>::MalformedVerificationKey)?;
-
-			let public_inputs = PublicInputStorage::<T>::get();
-			let deserialized_public_inputs = deserialize_public_inputs(public_inputs.as_slice())
-				.map_err(|_| Error::<T>::MalformedPublicInputs)?;
-			let vk = prepare_verification_key(deserialized_vk)
-				.map_err(|_| Error::<T>::VerificationKeyCreationError)?;
-			let proof = VProof::from_uncompressed(
-				&G1UncompressedBytes::new(deserialized_proof.a[0], deserialized_proof.a[1]),
-				&G2UncompressedBytes::new(
-					deserialized_proof.b[0][0],
-					deserialized_proof.b[0][1],
-					deserialized_proof.b[1][0],
-					deserialized_proof.b[1][1],
-				),
-				&G1UncompressedBytes::new(deserialized_proof.c[0], deserialized_proof.c[1]),
-			)
-			.map_err(|_| Error::<T>::ProofCreationError)?;
-
-			return match verify(vk, proof, prepare_public_inputs(deserialized_public_inputs)) {
+			match verify(vk, proof, prepare_public_inputs(inputs)) {
 				Ok(true) => {
-					Self::deposit_event(Event::<T>::VerificationSuccess);
+					Self::deposit_event(Event::<T>::VerificationSuccess { who: sender });
 					Ok(())
 				},
 				Ok(false) => {
@@ -235,6 +183,83 @@ pub mod pallet {
 				Err(_) => Err(Error::<T>::ProofVerificationError.into()),
 			}
 		}
+	}
+
+	fn get_public_inputs<T: Config>() -> Result<Vec<u64>, sp_runtime::DispatchError> {
+		let public_inputs = PublicInputStorage::<T>::get();
+		let deserialized_public_inputs = deserialize_public_inputs(public_inputs.as_slice())
+			.map_err(|_| Error::<T>::MalformedPublicInputs)?;
+		Ok(deserialized_public_inputs)
+	}
+
+	fn store_public_inputs<T: Config>(
+		pub_input: Vec<u8>,
+	) -> Result<Vec<u64>, sp_runtime::DispatchError> {
+		let public_inputs: PublicInputsDef<T> =
+			pub_input.try_into().map_err(|_| Error::<T>::TooLongPublicInputs)?;
+		let deserialized_public_inputs = deserialize_public_inputs(public_inputs.as_slice())
+			.map_err(|_| Error::<T>::MalformedPublicInputs)?;
+		PublicInputStorage::<T>::put(public_inputs);
+		Ok(deserialized_public_inputs)
+	}
+
+	fn get_verification_key<T: Config>() -> Result<VerificationKey, sp_runtime::DispatchError> {
+		let vk = VerificationKeyStorage::<T>::get();
+
+		ensure!(!vk.is_empty(), Error::<T>::VerificationKeyIsNotSet);
+		let deserialized_vk = VKey::from_json_u8_slice(vk.as_slice())
+			.map_err(|_| Error::<T>::MalformedVerificationKey)?;
+		let vk = prepare_verification_key(deserialized_vk)
+			.map_err(|_| Error::<T>::VerificationKeyCreationError)?;
+		Ok(vk)
+	}
+
+	fn store_verification_key<T: Config>(
+		vec_vk: Vec<u8>,
+	) -> Result<VKey, sp_runtime::DispatchError> {
+		let vk: VerificationKeyDef<T> =
+			vec_vk.try_into().map_err(|_| Error::<T>::TooLongVerificationKey)?;
+		let deserialized_vk = VKey::from_json_u8_slice(vk.as_slice())
+			.map_err(|_| Error::<T>::MalformedVerificationKey)?;
+		ensure!(deserialized_vk.curve == SUPPORTED_CURVE.as_bytes(), Error::<T>::NotSupportedCurve);
+		ensure!(
+			deserialized_vk.protocol == SUPPORTED_PROTOCOL.as_bytes(),
+			Error::<T>::NotSupportedProtocol
+		);
+
+		VerificationKeyStorage::<T>::put(vk);
+		Ok(deserialized_vk)
+	}
+
+	fn store_proof<T: Config>(vec_proof: Vec<u8>) -> Result<GProof, sp_runtime::DispatchError> {
+		ensure!(!vec_proof.is_empty(), Error::<T>::ProofIsEmpty);
+		let proof: ProofDef<T> = vec_proof.try_into().map_err(|_| Error::<T>::TooLongProof)?;
+		let deserialized_proof =
+			Proof::from_json_u8_slice(proof.as_slice()).map_err(|_| Error::<T>::MalformedProof)?;
+		ensure!(
+			deserialized_proof.curve == SUPPORTED_CURVE.as_bytes(),
+			Error::<T>::NotSupportedCurve
+		);
+		ensure!(
+			deserialized_proof.protocol == SUPPORTED_PROTOCOL.as_bytes(),
+			Error::<T>::NotSupportedProtocol
+		);
+
+		ProofStorage::<T>::put(proof.clone());		
+
+		let proof = GProof::from_uncompressed(
+			&G1UncompressedBytes::new(deserialized_proof.a[0], deserialized_proof.a[1]),
+			&G2UncompressedBytes::new(
+				deserialized_proof.b[0][0],
+				deserialized_proof.b[0][1],
+				deserialized_proof.b[1][0],
+				deserialized_proof.b[1][1],
+			),
+			&G1UncompressedBytes::new(deserialized_proof.c[0], deserialized_proof.c[1]),
+		)
+		.map_err(|_| Error::<T>::ProofCreationError)?;
+
+		Ok(proof)
 	}
 
 	fn prepare_verification_key(deserialized_vk: VKey) -> Result<VerificationKey, ()> {
