@@ -109,7 +109,7 @@ where
 	Ok(dec_numbers)
 }
 
-/// Turns array of G1 points represented by numbers in decimal format into vec of G1 points
+/// Turns array of G1 points represented by numbers in decimal format into vector of G1 points
 /// represented by numbers in binary format
 pub fn vec_g1_deserializer<'de, D>(de: D) -> Result<Vec<[Number; 3]>, D::Error>
 where
