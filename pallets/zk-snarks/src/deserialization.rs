@@ -26,7 +26,6 @@
 // IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-
 use serde::{Deserialize, Deserializer};
 use sp_std::vec::Vec;
 
@@ -39,6 +38,7 @@ type Number = [u8; 48];
 type G1 = [Number; 3];
 type G2 = [[Number; 2]; 3];
 
+/// Struct representing snarkjs generated verification key
 #[derive(Deserialize)]
 pub struct VKey {
 	#[serde(deserialize_with = "str_to_u8_vec_deserializer")]
@@ -65,11 +65,13 @@ pub struct VKey {
 }
 
 impl VKey {
+	/// Creates `VKey` from json representation
 	pub fn from_json_u8_slice(slice: &[u8]) -> Result<Self, ()> {
 		serde_json::from_slice(slice).map_err(|_| ())
 	}
 }
 
+/// Struct representing snarkjs generated proof
 #[derive(Deserialize)]
 pub struct Proof {
 	#[serde(deserialize_with = "str_to_u8_vec_deserializer")]
@@ -88,11 +90,13 @@ pub struct Proof {
 }
 
 impl Proof {
+	/// Creates `Proof` from json representation
 	pub fn from_json_u8_slice(slice: &[u8]) -> Result<Self, ()> {
 		serde_json::from_slice(slice).map_err(|_| ())
 	}
 }
-
+/// Turns G1 point represented by numbers in decimal format into G1 point represented by numbers in
+/// binary format
 pub fn g1_deserializer<'de, D>(de: D) -> Result<[Number; 3], D::Error>
 where
 	D: Deserializer<'de>,
@@ -105,6 +109,8 @@ where
 	Ok(dec_numbers)
 }
 
+/// Turns array of G1 points represented by numbers in decimal format into vector of G1 points
+/// represented by numbers in binary format
 pub fn vec_g1_deserializer<'de, D>(de: D) -> Result<Vec<[Number; 3]>, D::Error>
 where
 	D: Deserializer<'de>,
@@ -122,6 +128,8 @@ where
 		.collect())
 }
 
+/// Turns G2 point represented by numbers in decimal format into G2 point represented by numbers in
+/// binary format
 pub fn g2_deserializer<'de, D>(de: D) -> Result<[[Number; 2]; 3], D::Error>
 where
 	D: Deserializer<'de>,
@@ -138,6 +146,7 @@ where
 	Ok(g2_numbers)
 }
 
+/// Turns `str` into `Vec<u8>`
 pub fn str_to_u8_vec_deserializer<'de, D>(de: D) -> Result<Vec<u8>, D::Error>
 where
 	D: Deserializer<'de>,
@@ -146,6 +155,10 @@ where
 	Ok(s.as_bytes().into())
 }
 
+/// Creates vector of `u64` representing public inputs
+///
+/// # Arguments
+/// * `inputs` - A byte array slice containing array of integers in json array form
 pub fn deserialize_public_inputs(inputs: &[u8]) -> Result<Vec<u64>, ()> {
 	let inputs: Vec<&str> = serde_json::from_slice(inputs).unwrap();
 	let mut parsed_inputs: Vec<u64> = Vec::with_capacity(inputs.len());

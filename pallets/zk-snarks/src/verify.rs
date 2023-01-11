@@ -26,7 +26,6 @@
 // IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-
 use crate::verify::VerificationError::InvalidVerificationKey;
 use bls12_381::{Bls12, G1Affine, G2Affine, Scalar};
 use group::{prime::PrimeCurveAffine, Curve};
@@ -36,10 +35,18 @@ use sp_std::{ops::AddAssign, prelude::*};
 pub const SUPPORTED_CURVE: &str = "bls12381";
 pub const SUPPORTED_PROTOCOL: &str = "groth16";
 
+/// Stores G1 field points (x, y) in an array.
+/// positions `[0,48]` contains x
+/// positions `[49, 96]` contains y
 pub struct G1UncompressedBytes {
 	inner: [u8; 96],
 }
 
+/// Stores G2 field points (x, y) in an array.
+/// positions `[0,48]` contains x_c1
+/// positions `[49, 96]` contains x_c0
+/// positions `[97,144]` contains y_c1
+/// positions `[145, 192]` contains y_c0
 pub struct G2UncompressedBytes {
 	inner: [u8; 192],
 }
@@ -100,6 +107,7 @@ impl TryFrom<&G2UncompressedBytes> for G2Affine {
 	}
 }
 
+/// Represents Groth16 verification key
 pub struct VerificationKey {
 	pub alpha: G1Affine,
 	pub beta: G2Affine,
@@ -130,6 +138,7 @@ impl VerificationKey {
 	}
 }
 
+/// Represents Groth16 proof
 pub struct Proof {
 	pub a: G1Affine,
 	pub b: G2Affine,
@@ -159,10 +168,12 @@ pub type VerificationResult = Result<bool, VerificationError>;
 
 pub type PublicInputs = Vec<Scalar>;
 
+/// Turns `u64` values into `Scalar` representation
 pub fn prepare_public_inputs(inputs: Vec<u64>) -> Vec<Scalar> {
 	inputs.into_iter().map(|i| Scalar::from(i)).collect()
 }
 
+/// Verifies given proof with given verification key and public inputs
 pub fn verify(vk: VerificationKey, proof: Proof, inputs: PublicInputs) -> VerificationResult {
 	let public_inputs: &[<Bls12 as Engine>::Fr] = &inputs;
 
