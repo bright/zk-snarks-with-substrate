@@ -1,4 +1,10 @@
+use node_template_runtime::pallet_zk_snarks::{
+	common::{prepare_proof, prepare_verification_key},
+	deserialization::{deserialize_public_inputs, Proof, VKey},
+	verify::{prepare_public_inputs, verify},
+};
 use sc_cli::RunCmd;
+use std::{fs::File, io::Read};
 
 #[derive(Debug, clap::Parser)]
 pub struct Cli {
@@ -50,4 +56,48 @@ pub enum Subcommand {
 
 	/// Db meta columns information.
 	ChainInfo(sc_cli::ChainInfoCmd),
+
+	ZkSnarksVerify(ZkSnarksVerifyCmd),
+}
+#[derive(Debug, Clone, clap::Parser)]
+pub struct ZkSnarksVerifyCmd {
+	#[allow(missing_docs)]
+	pub vk_path: String,
+
+	#[allow(missing_docs)]
+	pub proof_path: String,
+
+	#[allow(missing_docs)]
+	pub inputs_path: String,
+}
+
+impl ZkSnarksVerifyCmd {
+	pub fn run(&self) -> sc_cli::Result<()> {
+		let mut vk_file = File::open(&self.vk_path)?;
+		let mut vk_contents = String::new();
+		vk_file.read_to_string(&mut vk_contents)?;
+
+		let mut proof_file = File::open(&self.proof_path)?;
+		let mut proof_contents = String::new();
+		proof_file.read_to_string(&mut proof_contents)?;
+
+		let mut inputs_file = File::open(&self.inputs_path)?;
+		let mut inputs_contents = String::new();
+		inputs_file.read_to_string(&mut inputs_contents)?;
+
+		let vk = VKey::from_json_u8_slice(vk_contents.as_bytes()).unwrap();
+		let proof = Proof::from_json_u8_slice(proof_contents.as_bytes()).unwrap();
+		let inputs = deserialize_public_inputs(inputs_contents.as_bytes()).unwrap();
+
+		match verify(
+			prepare_verification_key(vk).unwrap(),
+			prepare_proof(proof).unwrap(),
+			prepare_public_inputs(inputs),
+		) {
+			Ok(true) => println!("Proof OK"),
+			Ok(false) => println!("Proof NOK"),
+			Err(_) => println!("Verification error"),
+		}
+		Ok(())
+	}
 }
