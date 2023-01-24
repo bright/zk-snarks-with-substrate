@@ -42,7 +42,8 @@ pub mod benchmarking;
 pub mod weights;
 pub use weights::*;
 
-mod deserialization;
+pub mod common;
+pub mod deserialization;
 pub mod verify;
 
 use frame_support::storage::bounded_vec::BoundedVec;
@@ -57,10 +58,11 @@ type VerificationKeyDef<T> = BoundedVec<u8, <T as Config>::MaxVerificationKeyLen
 pub mod pallet {
 	use super::*;
 	use crate::{
+		common::prepare_verification_key,
 		deserialization::{deserialize_public_inputs, Proof, VKey},
 		verify::{
 			prepare_public_inputs, verify, G1UncompressedBytes, G2UncompressedBytes,
-			Proof as VProof, VerificationKey, SUPPORTED_CURVE, SUPPORTED_PROTOCOL,
+			Proof as VProof, SUPPORTED_CURVE, SUPPORTED_PROTOCOL,
 		},
 	};
 	use frame_support::pallet_prelude::*;
@@ -236,36 +238,5 @@ pub mod pallet {
 				Err(_) => Err(Error::<T>::ProofVerificationError.into()),
 			}
 		}
-	}
-
-	fn prepare_verification_key(deserialized_vk: VKey) -> Result<VerificationKey, ()> {
-		let mut ic: Vec<G1UncompressedBytes> = Vec::with_capacity(deserialized_vk.ic.len());
-		for i in 0..deserialized_vk.ic.len() {
-			let g1_bytes =
-				G1UncompressedBytes::new(deserialized_vk.ic[i][0], deserialized_vk.ic[i][1]);
-			ic.push(g1_bytes)
-		}
-		VerificationKey::from_uncompressed(
-			&G1UncompressedBytes::new(deserialized_vk.alpha[0], deserialized_vk.alpha[1]),
-			&G2UncompressedBytes::new(
-				deserialized_vk.beta[0][0],
-				deserialized_vk.beta[0][1],
-				deserialized_vk.beta[1][0],
-				deserialized_vk.beta[1][1],
-			),
-			&G2UncompressedBytes::new(
-				deserialized_vk.gamma[0][0],
-				deserialized_vk.gamma[0][1],
-				deserialized_vk.gamma[1][0],
-				deserialized_vk.gamma[1][1],
-			),
-			&G2UncompressedBytes::new(
-				deserialized_vk.delta[0][0],
-				deserialized_vk.delta[0][1],
-				deserialized_vk.delta[1][0],
-				deserialized_vk.delta[1][1],
-			),
-			&ic,
-		)
 	}
 }

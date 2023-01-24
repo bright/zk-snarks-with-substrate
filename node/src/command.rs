@@ -54,6 +54,7 @@ pub fn run() -> sc_cli::Result<()> {
 	let cli = Cli::from_args();
 
 	match &cli.subcommand {
+		Some(Subcommand::ZkSnarksVerify(cmd)) => cmd.run(),
 		Some(Subcommand::Key(cmd)) => cmd.run(&cli),
 		Some(Subcommand::BuildSpec(cmd)) => {
 			let runner = cli.create_runner(cmd)?;

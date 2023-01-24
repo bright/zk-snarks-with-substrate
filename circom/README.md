@@ -106,7 +106,7 @@ Start phase 2 (outputs a lot)
 
 Generate zkey:
 ```
-% snarkjs groth16 setup task.r1cs pot12_final.ptau task_0000.zkey
+% snarkjs groth16 setup build/task.r1cs pot12_final.ptau task_0000.zkey
 
 [INFO]  snarkJS: Reading r1cs
 [INFO]  snarkJS: Reading tauG1
@@ -143,7 +143,7 @@ Export the verification key:
 
 
 ## Generating proof
-`snarkjs groth16 prove task_0001.zkey task_js/witness.wtns proof.json input.json`
+`snarkjs groth16 prove task_0001.zkey build/task_js/witness.wtns proof.json input.json`
 
 ## Verifying proof
 ```

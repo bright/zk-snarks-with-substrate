@@ -38,6 +38,14 @@ without launching it:
 cargo build --release
 ```
 
+### Verifying proof
+
+The `zk-snarks-verify` subcommand will perform given proof verification with given key and public inputs
+
+```sh
+cargo run --release -- zk-snarks-verify <path-to-verification-key-file> <path-to-proof-file> <path-to-public-inputs-file>
+```
+
 ### Embedded Docs
 
 Once the project has been built, the following command can be used to explore all parameters and
