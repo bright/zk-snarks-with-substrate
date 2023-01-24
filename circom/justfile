@@ -1,0 +1,53 @@
+#performs build step
+build:
+	just compile-circuit && just compute-witness
+
+go-to-build:
+  cd build
+
+#compile circuit
+compile-circuit:
+	circom task.circom --r1cs --wasm --sym -o build --O0 -p bls12381
+
+#compute witness
+compute-witness:
+	cd build/task_js && node generate_witness.js task.wasm ../../input.json witness.wtns
+
+#performs powers of tau step
+tau:
+	just tau-create-ceremony && just tau-first-contribution && just tau-phase-2 && just tau-z-key && just tau-second-contribution && just tau-export-vk
+
+#create ceremony
+tau-create-ceremony:
+	cd build && snarkjs powersoftau new bls12381 12 pot12_0000.ptau -v
+
+#make first contribution
+tau-first-contribution:
+	cd build && snarkjs powersoftau contribute pot12_0000.ptau pot12_0001.ptau --name="ZkSnarks phase #1" -v
+
+#start phase 2
+tau-phase-2:
+	cd build && snarkjs powersoftau prepare phase2 pot12_0001.ptau pot12_final.ptau -v
+
+#generate z-key
+tau-z-key:
+	cd build && snarkjs groth16 setup task.r1cs pot12_final.ptau task_0000.zkey
+
+#make second contribution
+tau-second-contribution:
+	cd build && snarkjs zkey contribute task_0000.zkey task_0001.zkey --name="ZkSnarks phase #2" -v
+
+#export verification-key
+tau-export-vk:
+	cd build && snarkjs zkey export verificationkey task_0001.zkey verification_key.json -v
+
+#generate proof
+generate-proof:
+	cd build && snarkjs groth16 prove task_0001.zkey task_js/witness.wtns proof.json input.json
+
+#verify proof
+verify-proof:
+	cd build && snarkjs groth16 verify verification_key.json input.json proof.json
+
+all:
+  just build && just tau && just generate-proof && just verify-proof

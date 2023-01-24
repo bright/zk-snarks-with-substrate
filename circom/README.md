@@ -150,3 +150,17 @@ Export the verification key:
 % snarkjs groth16 verify verification_key.json input.json proof.json
 [INFO]  snarkJS: OK!
 ```
+
+## Predefined commands
+
+Alternatively you can run predefined commands to simplify process described above.
+Commands are defined in `justfile`
+In order to be able to run them you need to install `just` command runner, see https://github.com/casey/just#installation
+
+For example to build circuits just type `just build`
+
+In order to perform full tau ceremony just type `just tau`
+
+In order to generate proof just type `just generate-proof`
+
+In order to verify proof just type `just verify-proof`
