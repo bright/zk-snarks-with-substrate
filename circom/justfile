@@ -48,3 +48,6 @@ generate-proof:
 #verify proof
 verify-proof:
 	cd build && snarkjs groth16 verify verification_key.json input.json proof.json
+
+all:
+  just build && just tau && just generate-proof && just verify-proof
