@@ -64,10 +64,15 @@ pub struct VKey {
 	pub ic: Vec<G1>,
 }
 
+#[derive(Debug)]
+pub enum VKeyDeserializationError {
+	SerdeError,
+}
+
 impl VKey {
 	/// Creates `VKey` from json representation
-	pub fn from_json_u8_slice(slice: &[u8]) -> Result<Self, ()> {
-		serde_json::from_slice(slice).map_err(|_| ())
+	pub fn from_json_u8_slice(slice: &[u8]) -> Result<Self, VKeyDeserializationError> {
+		serde_json::from_slice(slice).map_err(|_| VKeyDeserializationError::SerdeError)
 	}
 }
 
@@ -89,10 +94,15 @@ pub struct Proof {
 	pub c: G1,
 }
 
+#[derive(Debug)]
+pub enum ProofDeserializationError {
+	SerdeError,
+}
+
 impl Proof {
 	/// Creates `Proof` from json representation
-	pub fn from_json_u8_slice(slice: &[u8]) -> Result<Self, ()> {
-		serde_json::from_slice(slice).map_err(|_| ())
+	pub fn from_json_u8_slice(slice: &[u8]) -> Result<Self, ProofDeserializationError> {
+		serde_json::from_slice(slice).map_err(|_| ProofDeserializationError::SerdeError)
 	}
 }
 /// Turns G1 point represented by numbers in decimal format into G1 point represented by numbers in
@@ -104,7 +114,7 @@ where
 	let mut dec_numbers: [Number; 3] = [[0; 48]; 3];
 	let s: [&str; 3] = serde::Deserialize::deserialize(de)?;
 	for i in 0..3 {
-		U256::from_dec_str(&s[i]).unwrap().to_big_endian(dec_numbers[i].as_mut_slice());
+		U256::from_dec_str(s[i]).unwrap().to_big_endian(dec_numbers[i].as_mut_slice());
 	}
 	Ok(dec_numbers)
 }
@@ -155,17 +165,24 @@ where
 	Ok(s.as_bytes().into())
 }
 
+#[derive(Debug)]
+pub enum PublicInputsDeserializationError {
+	SerdeError,
+}
+
 /// Creates vector of `u64` representing public inputs
 ///
 /// # Arguments
 /// * `inputs` - A byte array slice containing array of integers in json array form
-pub fn deserialize_public_inputs(inputs: &[u8]) -> Result<Vec<u64>, ()> {
+pub fn deserialize_public_inputs(
+	inputs: &[u8],
+) -> Result<Vec<u64>, PublicInputsDeserializationError> {
 	let inputs: Vec<&str> = serde_json::from_slice(inputs).unwrap();
 	let mut parsed_inputs: Vec<u64> = Vec::with_capacity(inputs.len());
-	for i in 0..inputs.len() {
-		match u64::from_str_radix(inputs[i], 10) {
+	for input in inputs {
+		match input.parse::<u64>() {
 			Ok(n) => parsed_inputs.push(n),
-			Err(_) => return Err(()),
+			Err(_) => return Err(PublicInputsDeserializationError::SerdeError),
 		}
 	}
 	Ok(parsed_inputs)

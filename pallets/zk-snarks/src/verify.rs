@@ -55,10 +55,8 @@ impl G1UncompressedBytes {
 	pub fn new(x: [u8; 48], y: [u8; 48]) -> Self {
 		let mut new_bytes: [u8; 96] = [0; 96];
 
-		for i in 0..48 {
-			new_bytes[i] = x[i];
-			new_bytes[i + 48] = y[i];
-		}
+		new_bytes[..48].copy_from_slice(&x[..48]);
+		new_bytes[48..(48 + 48)].copy_from_slice(&y[..48]);
 		new_bytes[0] |= &0u8;
 
 		G1UncompressedBytes { inner: new_bytes }
@@ -69,12 +67,11 @@ impl G2UncompressedBytes {
 	pub fn new(x_c0: [u8; 48], x_c1: [u8; 48], y_c0: [u8; 48], y_c1: [u8; 48]) -> Self {
 		let mut new_bytes: [u8; 192] = [0; 192];
 
-		for i in 0..48 {
-			new_bytes[i] = x_c1[i];
-			new_bytes[i + 48] = x_c0[i];
-			new_bytes[i + 96] = y_c1[i];
-			new_bytes[i + 144] = y_c0[i];
-		}
+		new_bytes[..48].copy_from_slice(&x_c1[..48]);
+		new_bytes[48..(48 + 48)].copy_from_slice(&x_c0[..48]);
+		new_bytes[96..(48 + 96)].copy_from_slice(&y_c1[..48]);
+		new_bytes[144..(48 + 144)].copy_from_slice(&y_c0[..48]);
+
 		new_bytes[0] |= &0u8;
 
 		G2UncompressedBytes { inner: new_bytes }
@@ -116,6 +113,11 @@ pub struct VerificationKey {
 	pub ic: Vec<G1Affine>,
 }
 
+#[derive(Debug)]
+pub enum VerificationKeyCreationError {
+	PointCreationError,
+}
+
 impl VerificationKey {
 	pub fn from_uncompressed(
 		alpha: &G1UncompressedBytes,
@@ -123,15 +125,22 @@ impl VerificationKey {
 		gamma: &G2UncompressedBytes,
 		delta: &G2UncompressedBytes,
 		ic: &Vec<G1UncompressedBytes>,
-	) -> Result<Self, ()> {
-		let alpha = alpha.try_into()?;
-		let beta: G2Affine = beta.try_into()?;
-		let gamma: G2Affine = gamma.try_into()?;
-		let delta: G2Affine = delta.try_into()?;
+	) -> Result<Self, VerificationKeyCreationError> {
+		let alpha =
+			alpha.try_into().map_err(|_| VerificationKeyCreationError::PointCreationError)?;
+		let beta: G2Affine =
+			beta.try_into().map_err(|_| VerificationKeyCreationError::PointCreationError)?;
+		let gamma: G2Affine =
+			gamma.try_into().map_err(|_| VerificationKeyCreationError::PointCreationError)?;
+		let delta: G2Affine =
+			delta.try_into().map_err(|_| VerificationKeyCreationError::PointCreationError)?;
 		let mut ic_2: Vec<G1Affine> = Vec::with_capacity(ic.len());
 
-		for i in 0..ic.len() {
-			ic_2.push(G1Affine::try_from(&ic[i])?);
+		for i in ic {
+			ic_2.push(
+				G1Affine::try_from(i)
+					.map_err(|_| VerificationKeyCreationError::PointCreationError)?,
+			);
 		}
 
 		Ok(VerificationKey { alpha, beta, gamma, delta, ic: ic_2 })
@@ -145,15 +154,20 @@ pub struct GProof {
 	pub c: G1Affine,
 }
 
+#[derive(Debug)]
+pub enum GProofCreationError {
+	PointCreationError,
+}
+
 impl GProof {
 	pub fn from_uncompressed(
 		a: &G1UncompressedBytes,
 		b: &G2UncompressedBytes,
 		c: &G1UncompressedBytes,
-	) -> Result<Self, ()> {
-		let a = a.try_into()?;
-		let b = b.try_into()?;
-		let c = c.try_into()?;
+	) -> Result<Self, GProofCreationError> {
+		let a = a.try_into().map_err(|_| GProofCreationError::PointCreationError)?;
+		let b = b.try_into().map_err(|_| GProofCreationError::PointCreationError)?;
+		let c = c.try_into().map_err(|_| GProofCreationError::PointCreationError)?;
 
 		Ok(GProof { a, b, c })
 	}
@@ -170,7 +184,7 @@ pub type PublicInputs = Vec<Scalar>;
 
 /// Turns `u64` values into `Scalar` representation
 pub fn prepare_public_inputs(inputs: Vec<u64>) -> Vec<Scalar> {
-	inputs.into_iter().map(|i| Scalar::from(i)).collect()
+	inputs.into_iter().map(Scalar::from).collect()
 }
 
 /// Verifies given proof with given verification key and public inputs

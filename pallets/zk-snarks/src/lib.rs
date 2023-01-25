@@ -246,7 +246,7 @@ pub mod pallet {
 			Error::<T>::NotSupportedProtocol
 		);
 
-		ProofStorage::<T>::put(proof.clone());
+		ProofStorage::<T>::put(proof);
 
 		let proof = GProof::from_uncompressed(
 			&G1UncompressedBytes::new(deserialized_proof.a[0], deserialized_proof.a[1]),
