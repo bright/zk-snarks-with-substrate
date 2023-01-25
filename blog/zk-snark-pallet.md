@@ -23,9 +23,9 @@ In Substrate, the business logic of the blockchain is hidden in the runtime. We 
 We have already learned that zk-SNARKs can be used to prove knowledge of a solution for a problem, without revealing it. We just need to provide proof that can be later verified by someone else. Creation of such proof is done in a couple of stages, where we first convert our problem to R1CS (*Rank-1 Constraint System*) form, and then transform it to the QAP (*Quadratic Arithmetic Program*). For this process, we used Circom and SnarkJS. We used a Groth16 as a proving system for assurance of the encryption. Finally, we were able to implement a Rust library, which used artifacts from Circom and SnarkJS, to validate proof.
 
 In the previous post, we show how we can use Circom and SnarkJS in the verification process. Let's remind us what artifacts in the context of those tools we get:
-* **[input.json](https://github.com/bright/zk-snarks-with-substrate/blob/M2-post/blog/data/input.json)** - this file contains public input, in our case, it is a `12` value from our equation.
-* **[verification_key.json](https://github.com/bright/zk-snarks-with-substrate/blob/M2-post/blog/data/verification_key.json)** - file generated from SnarkJS, it contains a verification key, which "signs" our circuits (transformed equation).
-* **[proof.json](https://github.com/bright/zk-snarks-with-substrate/blob/M2-post/blog/data/proof.json)** - file created by Alice using SnarkJS, which proves her knowledge of solving the equation. 
+* **[input.json](https://github.com/bright/zk-snarks-with-substrate/blob/main/blog/data/input.json)** - this file contains public input, in our case, it is a `12` value from our equation.
+* **[verification_key.json](https://github.com/bright/zk-snarks-with-substrate/blob/main/blog/data/verification_key.json)** - file generated from SnarkJS, it contains a verification key, which "signs" our circuits (transformed equation).
+* **[proof.json](https://github.com/bright/zk-snarks-with-substrate/blob/main/blog/data/proof.json)** - file created by Alice using SnarkJS, which proves her knowledge of solving the equation. 
 
 As you probably remember, at this stage Bob could use a SnarkJS to verify, if the proof is valid, by running this command:
 ```
@@ -48,7 +48,7 @@ Based on what we said, we can define an interface for our pallet which is in Sub
 ## Implementation
 The implementation we started from the [Substrate Node Template](https://github.com/substrate-developer-hub/substrate-node-template), which is a single-node blockchain that we could run locally in our development environment. We added there a zk-SNARK pallet which uses Groth16 in the verification process. The final result can be found on our [GitHub](https://github.com/bright/zk-snarks-with-substrate). We will now try to present the core components of this code.
 
-Implementation of the zk-SNARK pallet can be found in the [pallets/zk-snarks/src/lib.rs](https://github.com/bright/zk-snarks-with-substrate/blob/M2-post/pallets/zk-snarks/src/lib.rs) file. All pallets in Substrate follow the same skeleton pattern based on the macros:
+Implementation of the zk-SNARK pallet can be found in the [pallets/zk-snarks/src/lib.rs](https://github.com/bright/zk-snarks-with-substrate/blob/main/pallets/zk-snarks/src/lib.rs) file. All pallets in Substrate follow the same skeleton pattern based on the macros:
 
 ```
 pub use pallet::*;
@@ -220,7 +220,7 @@ This app will allow us to interact with our zk-SNARK pallet, but first you will 
 
 <center>
     
-![alt zk-snark extrinsics!](https://github.com/bright/zk-snarks-with-substrate/blob/M2-post/blog/img/extrinsicse_tab.png "Extrinsics tab")
+![alt zk-snark extrinsics!](https://github.com/bright/zk-snarks-with-substrate/blob/main/blog/img/extrinsicse_tab.png "Extrinsics tab")
     
 </center>
     
@@ -228,7 +228,7 @@ In the field `submit the following extrinsic`, please select `zkSnarks`. This is
 
 <center>
 
-![alt zk-snark setup verification key!](https://github.com/bright/zk-snarks-with-substrate/blob/M2-post/blog/img/vk.png "Setup Verification")
+![alt zk-snark setup verification key!](https://github.com/bright/zk-snarks-with-substrate/blob/main/blog/img/vk.png "Setup Verification")
 
 </center>
 
@@ -236,7 +236,7 @@ To upload them on the blockchain, by clicking on the `Submit Transaction` button
 
 <center>
 
-![alt zk-snark proof!](https://github.com/bright/zk-snarks-with-substrate/blob/M2-post/blog/img/proof.png "Proof")
+![alt zk-snark proof!](https://github.com/bright/zk-snarks-with-substrate/blob/main/blog/img/proof.png "Proof")
 
 </center>
 
@@ -244,7 +244,7 @@ When we press on `Submit Transaction`, our proof is going to be uploaded and the
 
 <center>
 
-![alt zk-snark verification success!](https://github.com/bright/zk-snarks-with-substrate/blob/M2-post/blog/img/verification_success.png "Verification Success")
+![alt zk-snark verification success!](https://github.com/bright/zk-snarks-with-substrate/blob/main/blog/img/verification_success.png "Verification Success")
 
 </center>
 
@@ -253,7 +253,7 @@ Now we can verify if we received a `VerificationSuccess` event. To do it, we nee
 
 <center>
 
-![alt zk-snark verification event!](https://github.com/bright/zk-snarks-with-substrate/blob/M2-post/blog/img/event.png "Verification Event")
+![alt zk-snark verification event!](https://github.com/bright/zk-snarks-with-substrate/blob/main/blog/img/event.png "Verification Event")
 
 </center>
 
