@@ -114,10 +114,10 @@ As you can see, after $REM$ reduction, we will get the same QAP equation evaluat
 We are ready now to create a proof. In our previous article, we started the process of creating it using Circom and SnarkJS. We wrote a circuit template and compiled it into the R1CS (Rank-1 Constraint System) form. We created a witness for R1CS, based on Alice's knowledge of solving Bob's equation. Now it is time to finish this process and finally create a proof.
 
 Let's remind us what artifacts we had already created:
-* **[input.json](https://github.com/bright/zk-snarks-with-substrate/blob/M2-post-groth/blog/data/input.json)** - this file contains public input, in our case, it is a `12` value from our equation.
-* **[task.r1cs](https://github.com/bright/zk-snarks-with-substrate/blob/M2-post-groth/blog/data/task.r1cs)** - constrains in R1CS format.
-* **[task.wasm](https://github.com/bright/zk-snarks-with-substrate/blob/M2-post-groth/blog/data/task.wasm)** - circuit compiled to WebAssembly.
-* **[witness.wtns](https://github.com/bright/zk-snarks-with-substrate/blob/M2-post-groth/blog/data/witness.wtns)** - witness file
+* **[input.json](https://github.com/bright/zk-snarks-with-substrate/blob/main/blog/data/input.json)** - this file contains public input, in our case, it is a `12` value from our equation.
+* **[task.r1cs](https://github.com/bright/zk-snarks-with-substrate/blob/main/blog/data/task.r1cs)** - constrains in R1CS format.
+* **[task.wasm](https://github.com/bright/zk-snarks-with-substrate/blob/main/blog/data/task.wasm)** - circuit compiled to WebAssembly.
+* **[witness.wtns](https://github.com/bright/zk-snarks-with-substrate/blob/main/blog/data/witness.wtns)** - witness file
 
 We will start now by creating a trusted setup for the Groth16. This will create a shared set of values and the process can be split into two parts. First, generic for all proofs, and the second one specific to the circuit.
 
