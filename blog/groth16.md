@@ -25,17 +25,18 @@ Here are the three core properties of Groth16 (according to Groth’s paper):
 Our previous article ended, when we defined a Quadratic Arithmetic Program (QAP):
 <center>
 
-$$ A(x)*B(x)-C(x)=H(x)*Z(x) $$
+$$ A(x) * B(x) - C(x) = H(x) * Z(x) $$
 
 </center>
 
 
 We made there a statement that the prover will try to convince the verifier that the above equation holds. Now we will take a closer look at how this statement applies to Groth16. Like other QAP-based algorithms, the prover will need somehow to prove that he knows a witness ($w$). As you remember from the previous article, a witness is a vector that contains all public and private inputs. In other words, the witness holds the complete solution for the Rank-1 Constraint System (R1CS), and in consequence, is a solution for our problem. We need to remember that $A(x)$, $B(x)$ and $C(x)$ are actually:
+
 <center>
 
-$A(x)=\sum_{i=1}^{m} w_i*A_i(x)$
-$B(x)=\sum_{i=1}^{m} w_i*B_i(x)$
-$C(x)=\sum_{i=1}^{m} w_i*C_i(x)$
+$A(x) = \sum_{i=1}^{m} w_i * A_i(x)$
+$B(x) = \sum_{i=1}^{m} w_i * B_i(x)$
+$C(x) = \sum_{i=1}^{m} w_i * C_i(x)$
 
 </center>
 
@@ -50,7 +51,7 @@ As we mentioned earlier, Groth16 requires a trusted setup. This process creates 
 Groth16 also defines a polynomial:
 <center>
 
-$$ L_i(x)= \beta*A_i(x)+\alpha*B_i(x)+C_i(x)$$
+$$L_i(x)=\beta * A_i(x) + \alpha * B_i(x) + C_i(x)$$
     
 </center>
 which is going to be used in further computations.
@@ -60,20 +61,20 @@ The result of the trusted setup are generated keys for the prover and the verifi
 Now let's move to the proof of its own. The prover is going to create it, based on the witness knowledge and the prover key. He is going to construct three values: $A_p$, $B_p$ and $C_p$, which are:
 <center>
 
-$A_p=\alpha+A(\tau)+r*\delta$, where $A(\tau)=\sum w_i*A_i(\tau)$ for $i$ in $0..m$
+$A_p = \alpha + A(\tau) + r * \delta$, where $A(\tau) = \sum w_i * A_i(\tau)$ for $i$ in $0..m$
 
 </center>
     
 <center>
 
-$B_p=\beta+B(\tau)+s*\delta$, where $B(\tau)=\sum w_i*B_i(\tau)$ for $i$ in $0..m$
+$B_p = \beta + B(\tau) + s * \delta$, where $B(\tau) = \sum w_i * B_i(\tau)$ for $i$ in $0..m$
 
 </center>
 
 <center>
     
-$C_p=Laux(\tau)/\delta+H(\tau)*Z(\tau)/\delta+s*A_p+r*B_p-r*s*\delta$, 
-    where $Laux(\tau)=\sum w_i*L_i(\tau)$ for $i$ in $l+1..m$
+$C_p = Laux(\tau) / \delta + H(\tau) * Z(\tau) / \delta + s * A_p + r * B_p - r * s * \delta$, 
+    where $Laux(\tau)=\sum w_i * L_i(\tau)$ for $i$ in $l+1..m$
     
 </center>
 
@@ -83,7 +84,7 @@ Now we move to the verifier. The goal for him is to check if the QAP holds when 
 
 <center>
     
-$$ A(\tau)*B(\tau)-C(\tau)=H(\tau)*Z(\tau) $$
+$$ A(\tau) * B(\tau) - C(\tau) = H(\tau) * Z(\tau) $$
 
 </center>
 
@@ -91,7 +92,7 @@ Unfortunately, the verifier doesn't have all pieces to make such a computation. 
 
 <center>
     
-$$ A_p*B_p=\alpha*\beta+(\sum w_i*L_i(\tau)/\gamma)*\gamma+Cp*\delta $$
+$$ A_p * B_p=\alpha * \beta + (\sum w_i * L_i(\tau)/\gamma) * \gamma + C_p * \delta$$
 
 </center>
 
@@ -101,12 +102,12 @@ How did this happen? If you replace the values of the above equation with the pr
 
 <center>
     
-$$ A(\tau)*B(\tau)+REM= C(\tau)+H(\tau)*Z(\tau)+REM$$
+$$ A(\tau) * B(\tau) + REM= C(\tau) + H(\tau) * Z(\tau) + REM$$
 
 </center>
 
 where: 
-$REM=\alpha*\beta+\alpha*B(\tau)+\beta*A(\tau)+\alpha*s*\delta+s*\delta*A(\tau)+r*\delta*B(\tau)+r*\beta*\delta+r*s*\delta*\delta$
+$REM = \alpha * \beta + \alpha * B(\tau) + \beta * A(\tau) + \alpha * s * \delta + s * \delta * A(\tau) + r * \delta * B(\tau) + r * \beta * \delta + r * s * \delta * \delta$
 As you can see, after $REM$ reduction, we will get the same QAP equation evaluated in $\tau$, which was our goal.
 
 ## Creating a proof – step by step
@@ -118,6 +119,8 @@ Let's remind us what artifacts we had already created:
 * **[task.r1cs](https://github.com/bright/zk-snarks-with-substrate/blob/main/blog/data/task.r1cs)** - constrains in R1CS format.
 * **[task.wasm](https://github.com/bright/zk-snarks-with-substrate/blob/main/blog/data/task.wasm)** - circuit compiled to WebAssembly.
 * **[witness.wtns](https://github.com/bright/zk-snarks-with-substrate/blob/main/blog/data/witness.wtns)** - witness file
+
+You can use them, or generate your own, by following the [tutorial](https://github.com/bright/zk-snarks-with-substrate/blob/main/circom/README.md) steps (`Compile the circuit`  and `Computing the witness`). 
 
 We will start now by creating a trusted setup for the Groth16. This will create a shared set of values and the process can be split into two parts. First, generic for all proofs, and the second one specific to the circuit.
 
@@ -189,13 +192,13 @@ When we defined our goals, we can focus now on the verification part. At the beg
 
 <center>
     
-$$ A_p*B_p=\alpha*\beta+(\sum w_i*L_i(\tau)/\gamma)*\gamma+Cp*\delta $$
+$$ A_p * B_p = \alpha * \beta + (\sum w_i * L_i(\tau) / \gamma) * \gamma + C_p * \delta $$
 
 </center>
 
 where, 
 $A_p,B_p,C_p$ - values defined in the proof
-$\alpha,\beta,\gamma,\tau,\delta$ - values created during the trusted setup
+$ \alpha, \beta, \gamma, \tau, \delta $ - values created during the trusted setup
 $L_i(\tau)$ - value of the polynomial defined in the Gorth16 evaluated for $\tau$
 $w_i$ - is our witness
 $i$ - is for $0..l$ (all public inputs).
@@ -220,7 +223,7 @@ Our result is a boolean type, true if the verification succeeds and false if it 
 
 <center>
     
-$$ A_p*B_p=\alpha*\beta+(\sum w_i*L_i(\tau)/\gamma)*\gamma+Cp*\delta $$
+$$ A_p * B_p = \alpha * \beta + (\sum w_i * L_i(\tau) / \gamma) * \gamma + C_p * \delta $$
 
 </center>
 
@@ -252,7 +255,7 @@ let a_b_pairing = Bls12::pairing(&proof.a, &proof.b);
 
 At the end we do a final check to ensure the correctness of the proof:
 
-`  Ok(a_b_pairing == final_result)`
+`Ok(a_b_pairing == final_result)`
 
 ### Running the verification
 
