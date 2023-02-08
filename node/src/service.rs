@@ -146,7 +146,7 @@ pub fn new_partial(
 	})
 }
 
-fn remote_keystore(_url: &String) -> Result<Arc<LocalKeystore>, &'static str> {
+fn remote_keystore(_url: &str) -> Result<Arc<LocalKeystore>, &'static str> {
 	// FIXME: here would the concrete keystore be built,
 	//        must return a concrete type (NOT `LocalKeystore`) that
 	//        implements `CryptoStore` and `SyncCryptoStore`
@@ -171,8 +171,7 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
 			Ok(k) => keystore_container.set_remote_keystore(k),
 			Err(e) =>
 				return Err(ServiceError::Other(format!(
-					"Error hooking up remote keystore for {}: {}",
-					url, e
+					"Error hooking up remote keystore for {url}: {e}"
 				))),
 		};
 	}
