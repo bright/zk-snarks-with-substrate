@@ -42,14 +42,14 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: ZKSnarks VerificationKeyStorage (r:0 w:1)
 	fn setup_verification_benchmark(len: usize,) -> Weight {
 		// Minimum execution time: 21_000 nanoseconds.
-		Weight::from_ref_time(22_000_000_u64).saturating_mul(len as u64)
+		Weight::from_parts(22_000_000_u64, 0).saturating_mul(len as u64)
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	// Storage: ZKSnarks VerificationKeyStorage (r:1 w:0)
 	// Storage: ZKSnarks ProofStorage (r:0 w:1)
 	fn verify_benchmark(len: usize,) -> Weight {
 		// Minimum execution time: 31_000 nanoseconds.
-		Weight::from_ref_time(32_000_000_u64).saturating_mul(len as u64)
+		Weight::from_parts(32_000_000_u64, 0).saturating_mul(len as u64)
 			.saturating_add(T::DbWeight::get().reads(1_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
